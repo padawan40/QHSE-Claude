@@ -1,0 +1,1514 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>7AS Audit Tool — Outil d'Audit QHSE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,600&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --g900:#0D3526;--g800:#1A4D3B;--g700:#236148;--g600:#2D7A5C;
+  --g100:#EAF4EF;--g50:#F2F8F5;
+  --gold:#C8892A;--gold-d:#A06A18;--gold-l:#FDF3E3;
+  --ink:#1A1C1E;--ink2:#434649;--ink3:#858A91;--ink4:#EAECEE;
+  --bg:#FAFAF8;--white:#FFFFFF;
+  --c-c:#16A34A;--c-cbg:#DCFCE7;
+  --c-ncm:#D97706;--c-ncmbg:#FEF3C7;
+  --c-NCM:#DC2626;--c-NCMbg:#FEE2E2;
+  --c-obs:#7C3AED;--c-obsbg:#EDE9FE;
+  --c-na:#6B7280;--c-nabg:#F3F4F6;
+  --r:10px;--r2:16px;
+  --sh:0 2px 12px rgba(26,77,59,.10);
+  --sh2:0 8px 32px rgba(26,77,59,.14);
+  --t:180ms cubic-bezier(.4,0,.2,1);
+  --serif:'Cormorant Garamond',Georgia,serif;
+  --sans:'Plus Jakarta Sans',system-ui,sans-serif;
+  --mono:'DM Mono',monospace;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{font-size:16px;scroll-behavior:smooth}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);line-height:1.5;overflow-x:hidden}
+a{color:inherit;text-decoration:none}
+button{cursor:pointer;font-family:var(--sans)}
+input,select,textarea{font-family:var(--sans);font-size:.9rem}
+#app{min-height:100vh;display:flex;flex-direction:column}
+.view{display:none;flex-direction:column;flex:1}
+.view.active{display:flex;animation:fadeIn .18s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* TOPBAR */
+.topbar{background:var(--g800);color:white;padding:0 20px;height:52px;display:flex;align-items:center;gap:14px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.25);position:sticky;top:0;z-index:100}
+.tb-logo{display:flex;align-items:center;gap:10px;cursor:pointer}
+.tb-badge{width:30px;height:30px;background:rgba(255,255,255,.15);border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:.7rem;font-weight:500;letter-spacing:.04em;flex-shrink:0}
+.tb-name{font-family:var(--serif);font-size:1.15rem;font-weight:700}
+.tb-sep{width:1px;height:20px;background:rgba(255,255,255,.2)}
+.tb-page{font-family:var(--mono);font-size:.72rem;color:rgba(255,255,255,.55);letter-spacing:.08em;text-transform:uppercase}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.tb-back{background:rgba(255,255,255,.12);border:none;color:white;padding:5px 14px;border-radius:6px;font-size:.78rem;font-weight:500;transition:var(--t);display:flex;align-items:center;gap:5px}
+.tb-back:hover{background:rgba(255,255,255,.22)}
+.tb-save-dot{width:7px;height:7px;border-radius:50%;background:#4ade80;box-shadow:0 0 6px #4ade80;flex-shrink:0}
+.tb-save-label{font-family:var(--mono);font-size:.68rem;color:rgba(255,255,255,.55)}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:9px 20px;border-radius:8px;font-weight:600;font-size:.88rem;border:none;transition:var(--t);cursor:pointer}
+.btn-green{background:var(--g800);color:white}.btn-green:hover{background:var(--g700);transform:translateY(-1px)}
+.btn-gold{background:var(--gold);color:white}.btn-gold:hover{background:var(--gold-d);transform:translateY(-1px);box-shadow:0 4px 14px rgba(200,137,42,.4)}
+.btn-outline{background:var(--white);color:var(--ink);border:1.5px solid var(--ink4)}.btn-outline:hover{border-color:var(--g600);color:var(--g700)}
+.btn-ghost{background:none;color:var(--ink2);border:1.5px solid var(--ink4)}.btn-ghost:hover{border-color:var(--ink2)}
+.btn-sm{padding:5px 13px;font-size:.78rem;border-radius:6px;font-weight:500}
+.btn-danger{color:#DC2626;border-color:#FECACA}.btn-danger:hover{background:#FEE2E2;border-color:#DC2626}
+
+/* DASHBOARD */
+#view-dashboard{background:var(--bg);overflow-y:auto}
+.dash-hero{background:linear-gradient(135deg,var(--g900) 0%,var(--g800) 100%);color:white;padding:48px 28px 52px;text-align:center;position:relative;overflow:hidden;flex-shrink:0}
+.dash-hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 75% 40%,rgba(200,137,42,.18) 0%,transparent 60%)}
+.dash-hero::after{content:'';position:absolute;bottom:-1px;left:0;right:0;height:40px;background:var(--bg);clip-path:ellipse(55% 100% at 50% 100%)}
+.dash-hero-inner{position:relative;z-index:1}
+.dash-hero h1{font-family:var(--serif);font-size:clamp(1.7rem,4vw,2.4rem);margin-bottom:8px;font-weight:700}
+.dash-hero p{color:rgba(255,255,255,.65);font-size:.9rem;max-width:480px;margin:0 auto 28px}
+.dash-hero-actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+.dash-stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;max-width:600px;margin:28px auto 0;position:relative;z-index:1}
+.dash-stat{text-align:center}
+.dash-stat-num{font-family:var(--mono);font-size:1.3rem;font-weight:500;color:white}
+.dash-stat-label{font-size:.72rem;color:rgba(255,255,255,.5)}
+.dash-body{padding:28px;max-width:880px;margin:0 auto;width:100%}
+.section-label{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);margin-bottom:14px;padding-bottom:8px;border-bottom:1px solid var(--ink4);display:flex;justify-content:space-between;align-items:center}
+.audit-list{display:flex;flex-direction:column;gap:10px}
+.audit-row{background:var(--white);border:1px solid var(--ink4);border-radius:var(--r2);padding:16px 18px;display:flex;align-items:center;gap:14px;transition:var(--t)}
+.audit-row:hover{border-color:var(--g600);box-shadow:var(--sh);transform:translateY(-1px)}
+.ar-icon{width:42px;height:42px;background:var(--g100);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.ar-info{flex:1;min-width:0}
+.ar-title{font-weight:700;font-size:.9rem;margin-bottom:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ar-meta{font-size:.75rem;color:var(--ink3);font-family:var(--mono)}
+.ar-score{text-align:right;flex-shrink:0;margin-right:4px}
+.ar-score-num{font-family:var(--mono);font-size:1.05rem;font-weight:600}
+.ar-score-label{font-size:.68rem;color:var(--ink3)}
+.ar-actions{display:flex;gap:7px;flex-shrink:0}
+.empty-state{text-align:center;padding:56px 24px;color:var(--ink3)}
+.empty-icon{font-size:2.8rem;margin-bottom:12px}
+.empty-state p{font-size:.88rem}
+
+/* SETUP */
+#view-setup{overflow-y:auto}
+.setup-wrap{padding:28px;max-width:720px;margin:0 auto;width:100%}
+.setup-wrap h2{font-family:var(--serif);font-size:1.7rem;margin-bottom:6px}
+.setup-wrap>p{color:var(--ink2);margin-bottom:28px;font-size:.88rem}
+.form-section{font-family:var(--mono);font-size:.7rem;text-transform:uppercase;letter-spacing:.1em;color:var(--ink3);margin:24px 0 14px;padding-bottom:8px;border-bottom:1px solid var(--ink4)}
+.fg{margin-bottom:18px}
+.fg label{display:block;font-size:.82rem;font-weight:600;margin-bottom:5px}
+.fg label small{font-weight:400;color:var(--ink3)}
+.fi,.fs,.fta{width:100%;padding:9px 13px;border:1.5px solid var(--ink4);border-radius:var(--r);color:var(--ink);background:var(--white);outline:none;transition:border-color var(--t),box-shadow var(--t)}
+.fi:focus,.fs:focus,.fta:focus{border-color:var(--g600);box-shadow:0 0 0 3px rgba(45,122,92,.12)}
+.fta{resize:vertical;min-height:64px}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.std-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+.std-card{border:2px solid var(--ink4);border-radius:var(--r2);padding:14px;cursor:pointer;transition:all var(--t);position:relative;user-select:none}
+.std-card:hover{border-color:var(--g600);background:var(--g50)}
+.std-card.sel{border-color:var(--g800);background:var(--g50)}
+.std-card.sel::after{content:'✓';position:absolute;top:8px;right:10px;color:var(--g700);font-weight:700;font-size:.9rem}
+.std-name{font-weight:700;font-size:.9rem;color:var(--ink)}
+.std-short{font-family:var(--mono);font-size:.7rem;color:var(--g700);margin-bottom:3px}
+.std-desc{font-size:.75rem;color:var(--ink3)}
+.std-count{font-family:var(--mono);font-size:.68rem;color:var(--ink3);margin-top:7px}
+.setup-footer{display:flex;justify-content:flex-end;gap:10px;margin-top:28px;padding-top:20px;border-top:1px solid var(--ink4)}
+
+/* CONDUCT */
+#view-conduct{flex-direction:row;height:calc(100vh - 52px);overflow:hidden}
+.sidebar{width:255px;flex-shrink:0;background:var(--white);border-right:1px solid var(--ink4);display:flex;flex-direction:column;overflow:hidden}
+.sb-head{padding:14px 14px 12px;border-bottom:1px solid var(--ink4);flex-shrink:0}
+.sb-name{font-weight:700;font-size:.85rem;margin-bottom:5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-std{display:inline-block;background:var(--g100);color:var(--g800);font-family:var(--mono);font-size:.65rem;padding:2px 7px;border-radius:4px;letter-spacing:.04em;margin-bottom:8px}
+.sb-prog-bar{height:4px;background:var(--ink4);border-radius:2px;overflow:hidden;margin-bottom:4px}
+.sb-prog-fill{height:100%;background:var(--g600);border-radius:2px;transition:width .4s}
+.sb-prog-txt{font-family:var(--mono);font-size:.68rem;color:var(--ink3);display:flex;justify-content:space-between}
+.sb-nav{flex:1;overflow-y:auto;padding:6px 0}
+.sb-chap{width:100%;padding:9px 14px;background:none;border:none;text-align:left;cursor:pointer;display:flex;align-items:center;gap:9px;transition:background var(--t);border-left:3px solid transparent}
+.sb-chap:hover{background:var(--g50)}
+.sb-chap.active{background:var(--g50);border-left-color:var(--g700)}
+.sb-chap-icon{font-size:.95rem;flex-shrink:0;width:20px}
+.sb-chap-info{flex:1;min-width:0;text-align:left}
+.sb-chap-title{font-size:.78rem;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sb-chap-meta{font-family:var(--mono);font-size:.65rem;color:var(--ink3);margin-top:1px}
+.sb-chap-score{font-family:var(--mono);font-size:.72rem;font-weight:600;flex-shrink:0}
+.sb-mini-bar{height:2px;background:var(--ink4);border-radius:1px;overflow:hidden;margin-top:3px}
+.sb-mini-fill{height:100%;border-radius:1px;transition:width .3s}
+.sb-foot{padding:10px 12px;border-top:1px solid var(--ink4);display:flex;gap:7px}
+.sb-foot .btn{flex:1;justify-content:center;font-size:.75rem;padding:6px 10px}
+.conduct-main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.ch-header{padding:18px 24px 12px;border-bottom:1px solid var(--ink4);background:var(--white);position:sticky;top:0;z-index:10;flex-shrink:0}
+.ch-top{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+.ch-icon{width:40px;height:40px;background:var(--g100);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.2rem;flex-shrink:0}
+.ch-ref{font-family:var(--mono);font-size:.68rem;color:var(--ink3);margin-bottom:2px}
+.ch-title{font-family:var(--serif);font-size:1.3rem;font-weight:700;line-height:1.2}
+.ch-stats{display:flex;gap:16px;flex-wrap:wrap}
+.ch-stat{font-family:var(--mono);font-size:.72rem}
+.ch-stat b{font-weight:600}
+.ch-stat.c{color:var(--c-c)}.ch-stat.ncm{color:var(--c-ncm)}.ch-stat.NCM{color:var(--c-NCM)}.ch-stat.obs{color:var(--c-obs)}
+.filters{padding:7px 24px;background:var(--g50);border-bottom:1px solid var(--ink4);display:flex;gap:7px;align-items:center;flex-wrap:wrap;flex-shrink:0}
+.filter-lbl{font-family:var(--mono);font-size:.68rem;color:var(--ink3);margin-right:2px}
+.fbtn{padding:3px 11px;border-radius:20px;font-size:.72rem;font-weight:500;border:1.5px solid var(--ink4);background:var(--white);color:var(--ink2);transition:var(--t);cursor:pointer}
+.fbtn.active{background:var(--g800);border-color:var(--g800);color:white}
+.req-list{padding:14px 24px;display:flex;flex-direction:column;gap:10px}
+.req{background:var(--white);border:1.5px solid var(--ink4);border-radius:var(--r2);overflow:hidden;transition:border-color var(--t)}
+.req.s-C{border-color:var(--c-c)}.req.s-NCm{border-color:var(--c-ncm)}.req.s-NCM{border-color:var(--c-NCM)}.req.s-OBS{border-color:var(--c-obs)}.req.s-NA{opacity:.55}
+.req:focus-within{box-shadow:var(--sh2)}
+.req-head{padding:12px 14px 6px;display:flex;align-items:flex-start;gap:10px}
+.req-ref{font-family:var(--mono);font-size:.67rem;color:var(--g700);background:var(--g50);padding:2px 7px;border-radius:4px;flex-shrink:0;margin-top:2px;white-space:nowrap}
+.req-text{font-size:.88rem;font-weight:500;line-height:1.5;flex:1}
+.req-hint-btn{background:none;border:none;color:var(--ink3);font-size:.75rem;padding:3px 6px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;gap:3px;transition:var(--t)}
+.req-hint-btn:hover{color:var(--g700);background:var(--g50)}
+.req-hint{padding:0 14px 9px 52px;font-size:.78rem;color:var(--ink2);font-style:italic;border-bottom:1px dashed var(--ink4);display:none}
+.req-hint.open{display:block}
+.req-score{padding:8px 14px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.sc{padding:5px 13px;border-radius:6px;font-size:.75rem;font-weight:700;border:2px solid transparent;transition:all var(--t);cursor:pointer;letter-spacing:.02em}
+.sc-C{background:var(--c-cbg);color:var(--c-c);border-color:var(--c-cbg)}.sc-C:hover,.sc-C.on{background:var(--c-c);color:white;border-color:var(--c-c)}
+.sc-NCm{background:var(--c-ncmbg);color:var(--c-ncm);border-color:var(--c-ncmbg)}.sc-NCm:hover,.sc-NCm.on{background:var(--c-ncm);color:white;border-color:var(--c-ncm)}
+.sc-NCM{background:var(--c-NCMbg);color:var(--c-NCM);border-color:var(--c-NCMbg)}.sc-NCM:hover,.sc-NCM.on{background:var(--c-NCM);color:white;border-color:var(--c-NCM)}
+.sc-OBS{background:var(--c-obsbg);color:var(--c-obs);border-color:var(--c-obsbg)}.sc-OBS:hover,.sc-OBS.on{background:var(--c-obs);color:white;border-color:var(--c-obs)}
+.sc-NA{background:var(--c-nabg);color:var(--c-na);border-color:var(--c-nabg)}.sc-NA:hover,.sc-NA.on{background:var(--c-na);color:white;border-color:var(--c-na)}
+.sc-sep{width:1px;height:16px;background:var(--ink4);flex-shrink:0}
+.req-notes{padding:0 14px 12px;display:none}
+.req-notes.open{display:block}
+.notes-lbl{font-size:.68rem;color:var(--ink3);font-family:var(--mono);margin-bottom:4px}
+.notes-ta{width:100%;padding:7px 10px;border:1.5px solid var(--ink4);border-radius:6px;font-size:.8rem;resize:none;background:var(--g50);outline:none;min-height:56px;transition:border-color var(--t)}
+.notes-ta:focus{border-color:var(--g600);background:var(--white)}
+.ch-nav{padding:12px 24px;display:flex;gap:10px;border-top:1px solid var(--ink4);background:var(--white);flex-shrink:0;flex-wrap:wrap}
+.ch-nav .btn{min-width:100px;justify-content:center}
+.ch-nav .ml{margin-left:auto}
+
+/* RESULTS */
+#view-results{overflow-y:auto;background:var(--bg)}
+.res-wrap{padding:28px;max-width:960px;margin:0 auto;width:100%}
+.res-hdr{text-align:center;margin-bottom:32px}
+.res-hdr h2{font-family:var(--serif);font-size:1.9rem;margin-bottom:6px}
+.res-hdr p{color:var(--ink2);font-size:.88rem}
+.res-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px}
+.res-card{background:var(--white);border:1px solid var(--ink4);border-radius:var(--r2);padding:22px}
+.res-card h3{font-weight:700;font-size:.88rem;margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--ink4)}
+.score-ring-wrap{display:flex;align-items:center;gap:20px}
+.score-ring{position:relative;width:96px;height:96px;flex-shrink:0}
+.score-ring svg{transform:rotate(-90deg)}
+.srt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.srt-num{font-family:var(--mono);font-size:1.25rem;font-weight:600}
+.srt-lbl{font-size:.62rem;color:var(--ink3)}
+.score-det{flex:1}
+.sd-row{display:flex;justify-content:space-between;align-items:center;padding:5px 0;border-bottom:1px solid var(--ink4);font-size:.82rem}
+.sd-row:last-child{border-bottom:none}
+.pill{display:inline-flex;align-items:center;padding:2px 9px;border-radius:20px;font-family:var(--mono);font-size:.72rem;font-weight:700}
+.p-C{background:var(--c-cbg);color:var(--c-c)}.p-NCm{background:var(--c-ncmbg);color:var(--c-ncm)}.p-NCM{background:var(--c-NCMbg);color:var(--c-NCM)}.p-OBS{background:var(--c-obsbg);color:var(--c-obs)}.p-NA{background:var(--c-nabg);color:var(--c-na)}
+.verdict{padding:14px 18px;border-radius:10px;margin-top:14px;border:2px solid}
+.verdict.ok{background:var(--c-cbg);border-color:var(--c-c);color:#15803d}
+.verdict.warn{background:var(--c-ncmbg);border-color:var(--c-ncm);color:#92400e}
+.verdict.fail{background:var(--c-NCMbg);border-color:var(--c-NCM);color:#991b1b}
+.verdict-t{font-weight:700;font-size:.88rem;margin-bottom:3px}
+.verdict-d{font-size:.78rem;opacity:.85}
+.chap-scores{display:flex;flex-direction:column;gap:9px}
+.csr{display:flex;align-items:center;gap:9px}
+.csr-name{font-size:.78rem;width:170px;flex-shrink:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.csr-bar{flex:1;height:7px;background:var(--ink4);border-radius:4px;overflow:hidden}
+.csr-fill{height:100%;border-radius:4px;transition:width .6s ease}
+.csr-pct{font-family:var(--mono);font-size:.72rem;width:38px;text-align:right;flex-shrink:0}
+.nc-wrap{background:var(--white);border:1px solid var(--ink4);border-radius:var(--r2);padding:22px;margin-bottom:20px}
+.nc-wrap h3{font-weight:700;font-size:.88rem;margin-bottom:14px;padding-bottom:9px;border-bottom:1px solid var(--ink4)}
+.nc-tbl{width:100%;border-collapse:collapse;font-size:.82rem}
+.nc-tbl th{text-align:left;padding:7px 10px;background:var(--g50);font-size:.72rem;font-weight:700;color:var(--ink2);border-bottom:2px solid var(--ink4)}
+.nc-tbl td{padding:9px 10px;border-bottom:1px solid var(--ink4);vertical-align:top}
+.nc-tbl tr:last-child td{border-bottom:none}
+.nc-tbl tr:hover td{background:var(--g50)}
+.nc-ref{font-family:var(--mono);font-size:.7rem;white-space:nowrap}
+.nc-empty{text-align:center;padding:28px;color:var(--ink3);font-size:.85rem}
+.res-actions{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap}
+
+/* REPORT */
+#view-report{overflow-y:auto;background:var(--bg)}
+.rpt-bar{padding:12px 28px;background:var(--g800);display:flex;align-items:center;gap:10px;flex-shrink:0}
+.rpt-bar .btn{font-size:.82rem;padding:7px 16px}
+.rpt-body{max-width:820px;margin:0 auto;padding:36px 28px;background:var(--white);min-height:calc(100vh - 52px)}
+.rpt-cover{text-align:center;padding:40px 0 32px;border-bottom:2px solid var(--ink4);margin-bottom:36px}
+.rpt-logo-mark{font-family:var(--serif);font-size:2rem;font-weight:700;color:var(--g800)}
+.rpt-logo-sub{font-family:var(--mono);font-size:.72rem;color:var(--ink3);letter-spacing:.1em;margin-bottom:16px}
+.rpt-divider{width:48px;height:3px;background:var(--gold);margin:16px auto;border-radius:2px}
+.rpt-doc-title{font-family:var(--serif);font-size:1.7rem;color:var(--ink);margin-bottom:6px}
+.rpt-doc-sub{font-size:.88rem;color:var(--ink3);margin-bottom:24px}
+.rpt-meta{display:inline-grid;grid-template-columns:auto auto;gap:6px 24px;text-align:left;font-size:.82rem}
+.rpt-meta dt{font-family:var(--mono);font-size:.68rem;color:var(--ink3);text-transform:uppercase;letter-spacing:.06em}
+.rpt-meta dd{font-weight:600}
+.rpt-sec-title{font-family:var(--serif);font-size:1.25rem;font-weight:700;margin:28px 0 14px;padding-bottom:7px;border-bottom:2px solid var(--ink4)}
+.rpt-tbl{width:100%;border-collapse:collapse;font-size:.82rem;margin-bottom:20px}
+.rpt-tbl th{text-align:left;padding:8px 11px;background:var(--g800);color:white;font-size:.72rem}
+.rpt-tbl td{padding:8px 11px;border-bottom:1px solid var(--ink4);vertical-align:top}
+.rpt-tbl tr:nth-child(even) td{background:var(--g50)}
+.rpt-verdict{padding:18px 22px;border-radius:10px;margin:20px 0;border:2px solid}
+.rpt-footer{text-align:center;margin-top:40px;padding-top:20px;border-top:1px solid var(--ink4);font-size:.75rem;color:var(--ink3);font-family:var(--mono)}
+
+/* TOOLTIP */
+.tip{position:relative}
+.tip-txt{position:absolute;bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);background:var(--ink);color:white;font-size:.7rem;padding:4px 9px;border-radius:5px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:200}
+.tip:hover .tip-txt{opacity:1}
+
+/* PRINT */
+@media print{
+  .topbar,.rpt-bar,.tb-right{display:none!important}
+  #view-report{display:block!important}
+  .rpt-body{padding:10mm;max-width:100%;box-shadow:none}
+  @page{margin:15mm}
+  .rpt-tbl tr{page-break-inside:avoid}
+}
+@media(max-width:768px){
+  #view-conduct{flex-direction:column;height:auto;overflow:visible}
+  .sidebar{width:100%;height:auto;border-right:none;border-bottom:1px solid var(--ink4)}
+  .sb-nav{max-height:180px}
+  .conduct-main{overflow:visible}
+  .ch-header{position:static}
+  .res-grid,.form-row,.std-grid{grid-template-columns:1fr}
+  .dash-stats-row{grid-template-columns:repeat(2,1fr)}
+  .ch-nav{position:static}
+  .setup-wrap,.res-wrap,.dash-body{padding:16px}
+  .req-list{padding:10px 14px}
+  .ch-header{padding:14px}
+  .filters{padding:7px 14px}
+  .ch-nav{padding:10px 14px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- TOPBAR -->
+<header class="topbar">
+  <div class="tb-logo" onclick="nav('dashboard')">
+    <div class="tb-badge">7AS</div>
+    <span class="tb-name">Consulting &amp; Audit</span>
+  </div>
+  <div class="tb-sep"></div>
+  <span class="tb-page" id="tbPage">OUTIL D'AUDIT QHSE</span>
+  <div class="tb-right">
+    <span class="tb-save-dot" id="saveDot" style="display:none"></span>
+    <span class="tb-save-label" id="saveLabel" style="display:none">Sauvegardé</span>
+    <button class="tb-back" id="tbBack" onclick="nav('dashboard')" style="display:none">← Tableau de bord</button>
+  </div>
+</header>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="view-dashboard" class="view active">
+  <div class="dash-hero">
+    <div class="dash-hero-inner">
+      <h1>Outil d'Audit QHSE</h1>
+      <p>Conduisez vos audits IATF 16949, ISO 9001, 45001 et 14001. Scoring en temps réel, traçabilité des non-conformités, rapport professionnel prêt à imprimer.</p>
+      <div class="dash-hero-actions">
+        <button class="btn btn-gold" onclick="nav('setup')">＋ Nouvel audit</button>
+        <button class="btn btn-outline" style="background:rgba(255,255,255,.1);color:white;border-color:rgba(255,255,255,.25)" onclick="showImport()">📂 Importer JSON</button>
+      </div>
+      <div class="dash-stats-row">
+        <div class="dash-stat"><div class="dash-stat-num" id="dStatAudits">0</div><div class="dash-stat-label">Audits réalisés</div></div>
+        <div class="dash-stat"><div class="dash-stat-num" id="dStatNC">0</div><div class="dash-stat-label">NC détectées</div></div>
+        <div class="dash-stat"><div class="dash-stat-num" id="dStatAvg">—</div><div class="dash-stat-label">Score moyen</div></div>
+        <div class="dash-stat"><div class="dash-stat-num">4</div><div class="dash-stat-label">Référentiels</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="dash-body">
+    <div class="section-label">Audits récents <span id="auditCount" style="font-size:.7rem"></span></div>
+    <div id="auditList" class="audit-list"></div>
+  </div>
+</div>
+
+<!-- ===== SETUP ===== -->
+<div id="view-setup" class="view">
+  <div class="setup-wrap">
+    <h2>Nouvel audit</h2>
+    <p>Configurez les paramètres de l'audit avant de démarrer.</p>
+    <div class="form-section">Référentiel d'audit</div>
+    <div class="std-grid" id="stdGrid"></div>
+    <div class="form-section">Informations générales</div>
+    <div class="form-row">
+      <div class="fg"><label>Entreprise auditée <small>*</small></label><input class="fi" id="sCompany" placeholder="Raison sociale" required></div>
+      <div class="fg"><label>Site / Établissement</label><input class="fi" id="sSite" placeholder="Ville ou code site"></div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Date de l'audit</label><input class="fi" type="date" id="sDate"></div>
+      <div class="fg"><label>Type d'audit</label>
+        <select class="fs" id="sType">
+          <option>Audit système</option><option>Audit processus</option>
+          <option>Audit produit / produit</option><option>Audit fournisseur</option>
+          <option>Audit pré-certification</option><option>Audit de suivi</option>
+          <option>Audit à blanc</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="fg"><label>Auditeur principal</label><input class="fi" id="sAuditor" placeholder="Prénom Nom"></div>
+      <div class="fg"><label>Équipe d'audit <small>(optionnel)</small></label><input class="fi" id="sTeam" placeholder="Noms séparés par des virgules"></div>
+    </div>
+    <div class="fg"><label>Périmètre / Scope</label><textarea class="fta" id="sScope" rows="2" placeholder="Processus, départements ou activités couverts par cet audit…"></textarea></div>
+    <div class="setup-footer">
+      <button class="btn btn-ghost" onclick="nav('dashboard')">Annuler</button>
+      <button class="btn btn-green" onclick="startAudit()">Démarrer l'audit →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== CONDUCT ===== -->
+<div id="view-conduct" class="view">
+  <aside class="sidebar">
+    <div class="sb-head">
+      <div class="sb-name" id="sbName">—</div>
+      <div class="sb-std" id="sbStd">—</div>
+      <div class="sb-prog-bar"><div class="sb-prog-fill" id="sbFill" style="width:0%"></div></div>
+      <div class="sb-prog-txt"><span id="sbDone">0/0</span><span id="sbPct">0%</span></div>
+    </div>
+    <nav class="sb-nav" id="sbNav"></nav>
+    <div class="sb-foot">
+      <button class="btn btn-outline btn-sm" onclick="nav('results')">📊 Résultats</button>
+      <button class="btn btn-green btn-sm" onclick="doSave()">💾 Sauver</button>
+    </div>
+  </aside>
+  <main class="conduct-main">
+    <div class="ch-header">
+      <div class="ch-top">
+        <div class="ch-icon" id="chIcon">📋</div>
+        <div>
+          <div class="ch-ref" id="chRef"></div>
+          <div class="ch-title" id="chTitle">—</div>
+        </div>
+      </div>
+      <div class="ch-stats" id="chStats"></div>
+    </div>
+    <div class="filters">
+      <span class="filter-lbl">Filtrer :</span>
+      <button class="fbtn active" onclick="setFilter('all',this)">Tous</button>
+      <button class="fbtn" onclick="setFilter('unanswered',this)">Non répondus</button>
+      <button class="fbtn" onclick="setFilter('NCM',this)">NCM</button>
+      <button class="fbtn" onclick="setFilter('NCm',this)">NCm</button>
+      <button class="fbtn" onclick="setFilter('OBS',this)">Observations</button>
+    </div>
+    <div class="req-list" id="reqList"></div>
+    <div class="ch-nav">
+      <button class="btn btn-outline" id="btnPrev" onclick="prevChapter()">← Précédent</button>
+      <button class="btn btn-outline ml" id="btnNext" onclick="nextChapter()">Suivant →</button>
+      <button class="btn btn-gold" id="btnFinish" onclick="nav('results')" style="display:none">Voir les résultats →</button>
+    </div>
+  </main>
+</div>
+
+<!-- ===== RESULTS ===== -->
+<div id="view-results" class="view">
+  <div class="res-wrap">
+    <div class="res-hdr">
+      <h2 id="resTitle">Résultats de l'audit</h2>
+      <p id="resSub">—</p>
+    </div>
+    <div class="res-grid">
+      <div class="res-card">
+        <h3>Score global</h3>
+        <div class="score-ring-wrap">
+          <div class="score-ring">
+            <svg width="96" height="96" viewBox="0 0 96 96">
+              <circle cx="48" cy="48" r="38" fill="none" stroke="#EAECEE" stroke-width="8"/>
+              <circle cx="48" cy="48" r="38" fill="none" stroke="#1A4D3B" stroke-width="8"
+                stroke-linecap="round" stroke-dasharray="238.76" id="ringFill" stroke-dashoffset="238.76"/>
+            </svg>
+            <div class="srt"><span class="srt-num" id="ringNum">—</span><span class="srt-lbl">Score</span></div>
+          </div>
+          <div class="score-det">
+            <div class="sd-row"><span>Conformes</span><span class="pill p-C" id="rC">0</span></div>
+            <div class="sd-row"><span>NC mineures</span><span class="pill p-NCm" id="rNCm">0</span></div>
+            <div class="sd-row"><span>NC majeures</span><span class="pill p-NCM" id="rNCM">0</span></div>
+            <div class="sd-row"><span>Observations</span><span class="pill p-OBS" id="rOBS">0</span></div>
+            <div class="sd-row"><span>Non applicables</span><span class="pill p-NA" id="rNA">0</span></div>
+          </div>
+        </div>
+        <div id="verdictBox" class="verdict"></div>
+      </div>
+      <div class="res-card">
+        <h3>Scores par chapitre</h3>
+        <div class="chap-scores" id="chapScores"></div>
+      </div>
+    </div>
+    <div class="nc-wrap">
+      <h3>Non-conformités &amp; Observations (<span id="ncCount">0</span>)</h3>
+      <table class="nc-tbl">
+        <thead><tr><th>Réf.</th><th>Sévérité</th><th>Exigence</th><th>Constats / Notes</th></tr></thead>
+        <tbody id="ncBody"></tbody>
+      </table>
+    </div>
+    <div class="res-actions">
+      <button class="btn btn-outline" onclick="nav('conduct')">← Reprendre l'audit</button>
+      <button class="btn btn-green" onclick="nav('report')">📄 Rapport complet</button>
+      <button class="btn btn-gold" onclick="exportJSON()">⬇ Exporter JSON</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== REPORT ===== -->
+<div id="view-report" class="view">
+  <div class="rpt-bar">
+    <button class="btn btn-outline" style="background:rgba(255,255,255,.1);color:white;border-color:rgba(255,255,255,.25)" onclick="nav('results')">← Résultats</button>
+    <button class="btn btn-gold" onclick="window.print()">🖨 Imprimer / Exporter PDF</button>
+  </div>
+  <div class="rpt-body" id="rptBody"></div>
+</div>
+
+<!-- Import modal -->
+<div id="importModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:none;align-items:center;justify-content:center">
+  <div style="background:white;border-radius:16px;padding:28px;max-width:400px;width:90%;box-shadow:0 20px 60px rgba(0,0,0,.3)">
+    <h3 style="margin-bottom:12px;font-family:var(--serif);font-size:1.3rem">Importer un audit JSON</h3>
+    <p style="font-size:.82rem;color:var(--ink2);margin-bottom:16px">Sélectionnez un fichier .json exporté depuis cet outil.</p>
+    <input type="file" id="importFile" accept=".json" style="width:100%;padding:8px;border:1.5px solid var(--ink4);border-radius:8px;margin-bottom:14px;font-size:.82rem">
+    <div style="display:flex;gap:10px;justify-content:flex-end">
+      <button class="btn btn-ghost btn-sm" onclick="closeImport()">Annuler</button>
+      <button class="btn btn-green btn-sm" onclick="doImport()">Importer</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+// ============================================================
+// AUDIT STANDARDS DATA
+// ============================================================
+const STANDARDS = {
+
+iatf16949: {
+  id:'iatf16949', name:'IATF 16949:2016', short:'IATF',
+  desc:'SMQ — Industrie automobile & manufacturière',
+  icon:'🚗',
+  chapters:[
+    { id:'4', title:'Contexte de l\'organisme', icon:'🏢',
+      reqs:[
+        {id:'4.1.1',ref:'4.1',text:'L\'organisme a déterminé les enjeux externes et internes pertinents à ses objectifs stratégiques.',hint:'Vérifier : analyse SWOT/PESTEL documentée, revue de direction intégrant le contexte.'},
+        {id:'4.2.1',ref:'4.2',text:'Les parties intéressées pertinentes et leurs exigences applicables sont déterminées et surveillées.',hint:'Tableau des parties intéressées (clients, fournisseurs, réglementation, employés, actionnaires) mis à jour.'},
+        {id:'4.3.1',ref:'4.3',text:'Le domaine d\'application du SMQ est documenté, disponible et maintenu à jour.',hint:'Manuel qualité ou document équivalent précisant les activités, sites, produits couverts.'},
+        {id:'4.3.2',ref:'4.3.1 IATF',text:'Les exclusions de la conception de produit/processus sont justifiées par écrit.',hint:'Si l\'organisme ne réalise pas de conception, cela est documenté et justifié auprès du client.'},
+        {id:'4.4.1',ref:'4.4.1',text:'La cartographie des processus est établie et les interactions entre processus sont définies.',hint:'Mapping disponible, à jour, partagé avec les responsables processus.'},
+        {id:'4.4.2',ref:'4.4.1.1 IATF',text:'Un processus de maîtrise des modifications (Change Point Control) est formalisé.',hint:'Procédure couvrant les modifications produit, processus, équipement, fournisseur, localisation.'},
+        {id:'4.4.3',ref:'4.4.1',text:'Les processus externalisés sont identifiés et leur maîtrise est définie.',hint:'Cartographie distinguant processus internes et externalisés, avec contrôles associés.'}
+      ]
+    },
+    { id:'5', title:'Leadership', icon:'🏆',
+      reqs:[
+        {id:'5.1.1',ref:'5.1.1',text:'La direction démontre son leadership : présence lors d\'audits clients, participation aux revues, communication régulière.',hint:'CR de revues de direction, photos/listes de présence audits, messages de direction sur la qualité.'},
+        {id:'5.1.2',ref:'5.1.1.1 IATF',text:'La direction s\'assure que les exigences clients et les KPIs de satisfaction sont connus et atteints.',hint:'Tableau de bord client (PPM client, OTD, statut fournisseur) présenté en revue de direction.'},
+        {id:'5.2.1',ref:'5.2.1',text:'La politique qualité est appropriée au contexte, inclut l\'amélioration continue et le respect des exigences.',hint:'Document approuvé par la direction, cohérent avec le contexte et les enjeux identifiés en §4.1.'},
+        {id:'5.2.2',ref:'5.2.2',text:'La politique qualité est disponible, communiquée et comprise à tous les niveaux.',hint:'Affichée en production — interroger 2-3 opérateurs sur sa connaissance.'},
+        {id:'5.3.1',ref:'5.3',text:'Les responsabilités et autorités pour les rôles pertinents sont définies, documentées et communiquées.',hint:'Organigramme à jour, fiches de poste existantes, délégations de pouvoirs documentées.'},
+        {id:'5.3.2',ref:'5.3.1 IATF',text:'Un responsable qualité (ou équivalent) avec accès à la direction est désigné.',hint:'Nomination formelle, disponibilité, autorité pour arrêter la production en cas de défaut qualité.'},
+        {id:'5.3.3',ref:'5.3.2 IATF',text:'Un représentant client est désigné pour assurer la prise en compte des CSR et des exigences spécifiques.',hint:'Personne identifiée, formée, ayant accès aux portails clients et matrices CSR.'}
+      ]
+    },
+    { id:'6', title:'Planification', icon:'📋',
+      reqs:[
+        {id:'6.1.1',ref:'6.1.1',text:'Les risques et opportunités liés au contexte ont été identifiés, évalués et font l\'objet d\'un plan de traitement.',hint:'Registre des risques, plan d\'actions, revue régulière de l\'efficacité des mesures.'},
+        {id:'6.1.2',ref:'6.1.2.3 IATF',text:'Une analyse de risques (nouvelles technologies, produits) est réalisée avant leur déploiement.',hint:'AMDEC système, étude de faisabilité, FTA ou méthode équivalente pour les nouvelles technologies.'},
+        {id:'6.1.3',ref:'6.1.2.4 IATF',text:'Un plan de continuité d\'activité couvrant les risques opérationnels est établi et testé.',hint:'BCP documenté (ruptures fournisseurs, pannes, incendies), testé et mis à jour annuellement.'},
+        {id:'6.2.1',ref:'6.2.1',text:'Les objectifs qualité sont établis, mesurables, cohérents avec la politique et communiqués.',hint:'Tableau de bord avec cibles chiffrées, fréquence de suivi, responsables désignés.'},
+        {id:'6.2.2',ref:'6.2.2',text:'Un plan d\'action documenté (qui/quoi/quand/comment/ressources) existe pour chaque objectif.',hint:'Plans d\'actions formels, jalons, suivi périodique documenté.'},
+        {id:'6.3.1',ref:'6.3',text:'Les modifications du SMQ sont planifiées de façon maîtrisée (objectif, intégrité, ressources, responsabilités).',hint:'Procédure de gestion des changements systèmes — pas seulement produit/processus.'}
+      ]
+    },
+    { id:'7', title:'Support', icon:'🛠️',
+      reqs:[
+        {id:'7.1.1',ref:'7.1.2',text:'Les ressources humaines nécessaires au SMQ sont disponibles et leur adéquation est vérifiée.',hint:'Plans de recrutement, matrice de polyvalence, gestion des absences pour postes critiques.'},
+        {id:'7.1.2',ref:'7.1.3',text:'L\'infrastructure (bâtiments, équipements, IT) est maintenue via un programme de maintenance préventive.',hint:'Plan de maintenance préventive, historique des maintenances, équipements critiques identifiés.'},
+        {id:'7.1.3',ref:'7.1.4',text:'L\'environnement de travail est maîtrisé (propreté, ordre, éclairage, température, ergonomie).',hint:'5S appliqués, audits terrain, indicateurs de propreté/ordre mesurés.'},
+        {id:'7.1.4',ref:'7.1.5.3.1 IATF',text:'Des études MSA (Mesure System Analysis) sont réalisées — résultats %R&R acceptables.',hint:'Plan MSA annuel, %R&R < 10% accepté, 10-30% conditionnel avec justification, >30% non accepté.'},
+        {id:'7.1.5',ref:'7.1.5.1',text:'Le plan de métrologie est établi : tous les EMS critiques sont étalonnés, certificats à jour.',hint:'Liste des EMS, fréquences d\'étalonnage, traçabilité au SI national, indicateurs d\'étalonnage.'},
+        {id:'7.2.1',ref:'7.2',text:'Les compétences requises pour les activités impactant la conformité produit sont définies et évaluées.',hint:'Matrice de compétences, habilitations, certifications spécifiques (soudeur, opérateur procédé spécial).'},
+        {id:'7.2.2',ref:'7.2',text:'Des actions de formation sont entreprises si nécessaire et leur efficacité est vérifiée.',hint:'Plan de formation annuel, évaluation d\'efficacité post-formation documentée.'},
+        {id:'7.3.1',ref:'7.3',text:'Le personnel est sensibilisé à la politique qualité, aux objectifs, à sa contribution et aux conséquences du non-respect.',hint:'Interroger 2-3 opérateurs sur les objectifs qualité de leur poste et l\'impact de leurs actions.'},
+        {id:'7.4.1',ref:'7.4',text:'Les processus de communication interne (interfaces processus) et externe (clients, fournisseurs) sont définis.',hint:'Plan de communication, registre des communications clients, réunions inter-processus documentées.'},
+        {id:'7.5.1',ref:'7.5.2',text:'La maîtrise documentaire est assurée : création, approbation, diffusion, mise à jour et archivage des documents.',hint:'Procédure de maîtrise documentaire — vérifier version des documents aux postes vs GED.'},
+        {id:'7.5.2',ref:'7.5.3',text:'Les enregistrements qualité sont identifiés, lisibles, retrouvables et conservés selon les durées définies.',hint:'Tableau de gestion des enregistrements, durées de conservation, support (papier/numérique), accès.'}
+      ]
+    },
+    { id:'8', title:'Réalisation des activités opérationnelles', icon:'⚙️',
+      reqs:[
+        {id:'8.1.1',ref:'8.1.1 IATF',text:'Les plans de contrôle sont disponibles, à jour et couvrent toutes les caractéristiques spéciales.',hint:'Plans de contrôle signés par le client, couvrant réception, en-cours, final — avec fréquences et réactions.'},
+        {id:'8.1.2',ref:'8.1.1 IATF',text:'La maîtrise statistique des procédés (SPC) est appliquée sur les caractéristiques spéciales.',hint:'Cartes de contrôle à jour, Cp/Cpk ≥ 1,67 pour SC, indices calculés sur données récentes.'},
+        {id:'8.2.1',ref:'8.2.2 IATF',text:'Les exigences spécifiques clients (CSR) sont déterminées, documentées et respectées.',hint:'Matrice de prise en compte des CSR (Stellantis, Renault, Toyota...) mise à jour.'},
+        {id:'8.2.2',ref:'8.2.3',text:'Une revue de faisabilité est réalisée et documentée avant tout engagement client.',hint:'CR de revue de faisabilité signés (manufacturing feasibility) — revue pluridisciplinaire.'},
+        {id:'8.3.1',ref:'8.3.1 IATF',text:'L\'APQP est planifié avec jalons définis, équipe pluridisciplinaire et suivi régulier.',hint:'Plan APQP (Advanced Product Quality Planning) avec gates, actions, responsables.'},
+        {id:'8.3.2',ref:'8.3.4.4 IATF',text:'Les dossiers PPAP sont complets, approuvés par le client (PSW signé) et archivés.',hint:'18 éléments PPAP vérifiés, PSW approuvé niveau 1-5 selon exigence client, archivage 15 ans.'},
+        {id:'8.3.3',ref:'8.3.3.3 IATF',text:'Les AMDEC Produit et Processus (FMEA AIAG-VDA) sont réalisées, mises à jour et les IPR maîtrisés.',hint:'FMEA AIAG-VDA 1ère éd. ou 2019 — actions sur IPR élevés, date de dernière mise à jour récente.'},
+        {id:'8.4.1',ref:'8.4.1.1 IATF',text:'La liste des fournisseurs approuvés (ASL) est maintenue et le processus de qualification est documenté.',hint:'ASL à jour, critères de qualification (audit, échantillon initial, certification ISO...).'},
+        {id:'8.4.2',ref:'8.4.1.2 IATF',text:'La performance des fournisseurs est mesurée (PPM, OTD, qualité livraisons) et des revues périodiques ont lieu.',hint:'Scorecard fournisseurs mensuel, seuils d\'alerte définis, plans d\'amélioration pour fournisseurs en rouge.'},
+        {id:'8.4.3',ref:'8.4.1.3 IATF',text:'Un programme d\'audits fournisseurs est planifié et réalisé (2e partie).',hint:'Plan d\'audit annuel fournisseurs, rapports disponibles, actions correctives suivies.'},
+        {id:'8.5.1',ref:'8.5.1.1 IATF',text:'Les instructions de travail sont disponibles aux postes, à jour, dans la langue de l\'opérateur.',hint:'IT visuelles (photos, pictogrammes), version conforme à la GED, connues et appliquées par les opérateurs.'},
+        {id:'8.5.2',ref:'8.5.1.3 IATF',text:'La maîtrise des processus spéciaux (soudage, traitement thermique, peinture…) est assurée.',hint:'Qualifications procédés, habilitations opérateurs, paramètres maîtrisés, certifications EN/ISO.'},
+        {id:'8.5.3',ref:'8.5.2.1 IATF',text:'La traçabilité des produits est assurée de la réception jusqu\'à l\'expédition.',hint:'Numéros de lot, dates de fabrication, opérateurs identifiables — simuler une traçabilité réelle.'},
+        {id:'8.5.4',ref:'8.5.3',text:'La propriété du client (outillages, composants, données) est inventoriée, protégée et signalée si endommagée.',hint:'Liste des biens client, stockage sécurisé, étiquetage, contrat de mise à disposition.'},
+        {id:'8.6.1',ref:'8.6.1 IATF',text:'Les critères d\'acceptation des produits sont définis et la libération n\'est effectuée qu\'après vérification.',hint:'Systèmes de libération documentés (autorisation finale), enregistrements de contrôle final disponibles.'},
+        {id:'8.7.1',ref:'8.7.1 IATF',text:'Les produits non conformes sont identifiés (étiquette NC), séparés physiquement et maîtrisés.',hint:'Zone NC physiquement délimitée, étiquetage rouge visible, accès restreint, état connu en temps réel.'},
+        {id:'8.7.2',ref:'8.7.1 IATF',text:'Le traitement des NC est documenté : sort (retouche, rebut, dérogation, tri), décision tracée.',hint:'Formulaire de disposition NC, circuit de décision, dérogation client si NC affecte les exigences.'}
+      ]
+    },
+    { id:'9', title:'Évaluation des performances', icon:'📊',
+      reqs:[
+        {id:'9.1.1',ref:'9.1.1',text:'Les indicateurs de performance des processus sont définis, mesurés régulièrement et analysés.',hint:'Tableaux de bord processus avec cibles, tendances, analyses de variations significatives.'},
+        {id:'9.1.2',ref:'9.1.2',text:'La satisfaction client est mesurée via des KPIs (PPM client, OTD, statut qualité, réclamations).',hint:'Données clients (portails, scorecards), tendances positives/négatives identifiées.'},
+        {id:'9.1.3',ref:'9.1.3',text:'Des analyses de données sont réalisées pour orienter les décisions (Pareto, corrélations, tendances).',hint:'Analyses documentées dans les revues de processus ou de direction, utilisées pour prioriser les actions.'},
+        {id:'9.2.1',ref:'9.2.2.1 IATF',text:'Un programme d\'audit interne complet couvre le SMQ (système), les processus et les produits.',hint:'Plan d\'audit annuel 3 volets : système + processus + produit, couverture de l\'ensemble des processus.'},
+        {id:'9.2.2',ref:'9.2.2.1 IATF',text:'Les auditeurs internes sont qualifiés (formation IATF) et indépendants des activités auditées.',hint:'Habilitations documentées, matrice d\'indépendance, formation conforme aux exigences IATF.'},
+        {id:'9.3.1',ref:'9.3.1 IATF',text:'La revue de direction est réalisée à la fréquence requise par IATF (minimum annuelle).',hint:'CR de revue, dates, participants (direction incluse), actions définies avec responsables et délais.'},
+        {id:'9.3.2',ref:'9.3.2 IATF',text:'L\'ordre du jour de la revue couvre tous les éléments d\'entrée requis par IATF 16949 §9.3.2.',hint:'Vérifier : KPIs processus, satisfaction client, audits, NC, objectifs, ressources, retours field...'}
+      ]
+    },
+    { id:'10', title:'Amélioration', icon:'🔄',
+      reqs:[
+        {id:'10.1.1',ref:'10.1',text:'Des opportunités d\'amélioration sont identifiées systématiquement et font l\'objet d\'actions planifiées.',hint:'Registre des améliorations, idées remontées du terrain, actions issues des audits et revues.'},
+        {id:'10.2.1',ref:'10.2.1 IATF',text:'L\'analyse cause racine est rigoureuse (8D, QRQC, 5 Pourquoi, Ishikawa) et documentée.',hint:'Rapports 8D/QRQC avec analyse de cause racine vérifiable, actions correctives ciblées sur la cause.'},
+        {id:'10.2.2',ref:'10.2.1 IATF',text:'Le déploiement latéral des actions correctives (Horizontal Deployment) est appliqué.',hint:'Preuve d\'extension des AC à d\'autres processus/produits/sites similaires affectés.'},
+        {id:'10.2.3',ref:'10.2.1 IATF',text:'Un processus d\'escalade des problèmes (délais de réponse clients) est défini et respecté.',hint:'Matrice d\'escalade avec délais (D0 containment, D5 cause, D8 clôture) — respectés sur les dernières réclamations.'},
+        {id:'10.2.4',ref:'10.2.1 IATF',text:'L\'efficacité des actions correctives est vérifiée par des données terrain (réduction des NC, PPM).',hint:'Suivi post-AC : indicateur cible mesuré avant/après, validation de l\'efficacité documentée.'},
+        {id:'10.3.1',ref:'10.3.1 IATF',text:'Un plan d\'amélioration continue avec des indicateurs d\'efficience est établi et suivi.',hint:'Plan d\'amélioration formalisé (réduction rebuts, temps de cycle, PPM, TRS...), tendances positives.'},
+        {id:'10.3.2',ref:'10.3.1 IATF',text:'Des objectifs chiffrés de réduction des coûts de non-qualité (CoQ) sont définis et suivis.',hint:'Coûts de non-qualité mesurés (rebuts, retouches, réclamations, rappels), objectifs de réduction annuels.'}
+      ]
+    }
+  ]
+},
+
+iso9001: {
+  id:'iso9001', name:'ISO 9001:2015', short:'ISO 9001',
+  desc:'Système de Management de la Qualité — Générique',
+  icon:'🏅',
+  chapters:[
+    { id:'4', title:'Contexte de l\'organisme', icon:'🏢',
+      reqs:[
+        {id:'4.1',ref:'4.1',text:'Les enjeux internes et externes pertinents à la finalité de l\'organisme sont déterminés.',hint:'Analyse SWOT, PESTEL ou équivalent — mise à jour au moins annuelle.'},
+        {id:'4.2',ref:'4.2',text:'Les parties intéressées pertinentes et leurs exigences sont identifiées et surveillées.',hint:'Tableau des parties intéressées avec leurs exigences et fréquences de surveillance.'},
+        {id:'4.3',ref:'4.3',text:'Le domaine d\'application du SMQ est défini, documenté et disponible.',hint:'Document de scope précis, exclusions justifiées, cohérence avec les activités.'},
+        {id:'4.4',ref:'4.4',text:'Les processus du SMQ sont déterminés avec leurs séquences, interactions et critères de performance.',hint:'Cartographie des processus, fiches processus avec indicateurs, propriétaires désignés.'}
+      ]
+    },
+    { id:'5', title:'Leadership', icon:'🏆',
+      reqs:[
+        {id:'5.1',ref:'5.1',text:'La direction démontre son leadership et son engagement envers le SMQ.',hint:'Implication dans les revues, communication qualité, soutien aux responsables.'},
+        {id:'5.2',ref:'5.2',text:'La politique qualité est établie, communiquée et disponible pour les parties intéressées.',hint:'Affichée, connue des employés — vérifier lors d\'entretiens terrain.'},
+        {id:'5.3',ref:'5.3',text:'Les responsabilités et autorités pour les rôles pertinents sont définies et communiquées.',hint:'Organigramme à jour, fiches de poste, délégations documentées.'}
+      ]
+    },
+    { id:'6', title:'Planification', icon:'📋',
+      reqs:[
+        {id:'6.1',ref:'6.1',text:'Les risques et opportunités sont identifiés, évalués et traités.',hint:'Registre des risques, plans de traitement, revue d\'efficacité.'},
+        {id:'6.2',ref:'6.2',text:'Les objectifs qualité sont mesurables, cohérents avec la politique et planifiés.',hint:'Objectifs SMART, plans d\'action associés, suivi régulier documenté.'},
+        {id:'6.3',ref:'6.3',text:'La planification des changements est maîtrisée (objectif, intégrité, ressources).',hint:'Procédure de gestion des changements — produit, processus, organisation.'}
+      ]
+    },
+    { id:'7', title:'Support', icon:'🛠️',
+      reqs:[
+        {id:'7.1',ref:'7.1',text:'Les ressources (humaines, infrastructure, environnement, mesure) sont déterminées et disponibles.',hint:'Plans de ressources, maintenance infrastructure, plan métrologie, environnement de travail.'},
+        {id:'7.2',ref:'7.2',text:'Les compétences requises sont définies, vérifiées et des actions d\'amélioration sont menées si nécessaire.',hint:'Matrice de compétences, plan de formation, évaluation d\'efficacité.'},
+        {id:'7.3',ref:'7.3',text:'Le personnel est sensibilisé à la politique qualité, aux objectifs et à sa contribution.',hint:'Interroger des employés — connaissent-ils les objectifs de leur processus ?'},
+        {id:'7.5',ref:'7.5',text:'Les informations documentées sont créées, maîtrisées et disponibles aux personnes concernées.',hint:'Procédure de maîtrise documentaire, GED ou système équivalent, archivage.'}
+      ]
+    },
+    { id:'8', title:'Réalisation des activités opérationnelles', icon:'⚙️',
+      reqs:[
+        {id:'8.1',ref:'8.1',text:'La planification opérationnelle est définie pour répondre aux exigences de produits et services.',hint:'Plans de contrôle, procédures de fabrication/prestation, critères d\'acceptation.'},
+        {id:'8.2',ref:'8.2',text:'Les exigences relatives aux produits et services (clients, légales, implicites) sont déterminées et revues.',hint:'Revue de contrat, enregistrements de revue, prise en compte des modifications.'},
+        {id:'8.4',ref:'8.4',text:'La maîtrise des prestataires externes (produits, services, processus) est assurée.',hint:'Qualification fournisseurs, critères de sélection, surveillance des performances.'},
+        {id:'8.5',ref:'8.5',text:'La production/prestation est réalisée dans des conditions maîtrisées (instructions, équipements, traçabilité).',hint:'Instructions de travail disponibles, équipements étalonnés, traçabilité des lots.'},
+        {id:'8.7',ref:'8.7',text:'Les éléments de sortie non conformes sont identifiés et maîtrisés pour éviter leur utilisation involontaire.',hint:'Zone NC identifiée, étiquetage, procédure de traitement, enregistrements.'}
+      ]
+    },
+    { id:'9', title:'Évaluation des performances', icon:'📊',
+      reqs:[
+        {id:'9.1',ref:'9.1',text:'La surveillance, la mesure, l\'analyse et l\'évaluation des performances sont réalisées.',hint:'KPIs définis, mesurés, analysés — tableaux de bord processus à jour.'},
+        {id:'9.2',ref:'9.2',text:'Des audits internes planifiés sont réalisés par des auditeurs compétents et indépendants.',hint:'Programme d\'audit annuel, habilitations auditeurs, rapports et plans d\'action.'},
+        {id:'9.3',ref:'9.3',text:'La revue de direction est réalisée et couvre tous les éléments requis.',hint:'CR de revue avec toutes les entrées §9.3.2 — décisions et actions documentées.'}
+      ]
+    },
+    { id:'10', title:'Amélioration', icon:'🔄',
+      reqs:[
+        {id:'10.2',ref:'10.2',text:'Les non-conformités font l\'objet d\'une analyse de cause et d\'actions correctives efficaces.',hint:'Procédure AC, analyse cause racine, vérification d\'efficacité, mise à jour des risques.'},
+        {id:'10.3',ref:'10.3',text:'L\'amélioration continue du SMQ est planifiée et démontrée par des données.',hint:'Plan d\'amélioration avec indicateurs de tendance positive — résultats mesurables.'}
+      ]
+    }
+  ]
+},
+
+iso45001: {
+  id:'iso45001', name:'ISO 45001:2018', short:'ISO 45001',
+  desc:'Système de Management Santé & Sécurité au Travail',
+  icon:'🦺',
+  chapters:[
+    { id:'4', title:'Contexte de l\'organisme', icon:'🏢',
+      reqs:[
+        {id:'4.1',ref:'4.1',text:'Les enjeux internes et externes ayant une incidence sur les résultats SST sont déterminés.',hint:'Contexte SST incluant réglementation, conditions de travail, historique d\'accidents, culture sécurité.'},
+        {id:'4.2',ref:'4.2',text:'Les besoins et attentes des travailleurs et autres parties intéressées sont déterminés.',hint:'Consultation des travailleurs, dialogue avec instances représentatives, exigences légales SST.'},
+        {id:'4.3',ref:'4.3',text:'Le domaine d\'application du SMO est documenté et disponible.',hint:'Document précisant les activités, sites, travailleurs couverts par le système SST.'}
+      ]
+    },
+    { id:'5', title:'Leadership et participation des travailleurs', icon:'🤝',
+      reqs:[
+        {id:'5.1',ref:'5.1',text:'La direction démontre son leadership SST : présence terrain, ressources allouées, culture sécurité promue.',hint:'Visites terrain de la direction, discours sécurité, investissements EPI/aménagement, arrêts de travail autorisés.'},
+        {id:'5.2',ref:'5.2',text:'La politique SST est établie, appropriée aux risques, inclut la participation des travailleurs.',hint:'Politique documentée, approuvée, affichée, connue des travailleurs (sonder 2-3 personnes).'},
+        {id:'5.3',ref:'5.3',text:'Les responsabilités, rôles et autorités SST sont définis et communiqués.',hint:'Organigramme SST, fiches de poste avec responsabilités sécurité, délégations.'},
+        {id:'5.4',ref:'5.4',text:'Les travailleurs sont consultés et participent à l\'identification des dangers et à l\'amélioration SST.',hint:'CHSCT/CSE impliqué, groupes de travail sécurité, remontées terrain traitées.'}
+      ]
+    },
+    { id:'6', title:'Planification', icon:'📋',
+      reqs:[
+        {id:'6.1.1',ref:'6.1.1',text:'Un processus systématique d\'identification des dangers est en place pour toutes les activités.',hint:'Inventaire des dangers (physiques, chimiques, biologiques, ergonomiques, psychosociaux) documenté.'},
+        {id:'6.1.2',ref:'6.1.2.1',text:'L\'évaluation des risques SST est réalisée et documentée (DUERP à jour).',hint:'DUERP mis à jour annuellement ou suite à modification — cotation, hiérarchisation, plans d\'actions.'},
+        {id:'6.1.3',ref:'6.1.3',text:'Les exigences légales et réglementaires SST applicables sont identifiées et respectées.',hint:'Veille réglementaire active, liste des textes applicables, évaluation de conformité réalisée.'},
+        {id:'6.1.4',ref:'6.1.4',text:'Des plans d\'actions sont établis pour traiter les risques significatifs SST.',hint:'Plan de prévention annuel avec actions hiérarchisées (élimination, substitution, protection collective/individuelle).'},
+        {id:'6.2',ref:'6.2',text:'Les objectifs SST sont mesurables, communiqués et font l\'objet d\'un plan d\'action.',hint:'Taux de fréquence, taux de gravité, objectifs zéro accident, taux de réalisation des actions prévention.'}
+      ]
+    },
+    { id:'7', title:'Support', icon:'🛠️',
+      reqs:[
+        {id:'7.2',ref:'7.2',text:'Les compétences SST nécessaires sont définies, vérifiées et les formations réalisées.',hint:'Habilitations électriques, certifications CACES, formation SST, secouristes (SST) — validités à jour.'},
+        {id:'7.3',ref:'7.3',text:'Les travailleurs sont sensibilisés aux dangers et aux mesures de prévention de leur poste.',hint:'Accueil sécurité documenté, formations spécifiques, sensibilisations thématiques (TMS, chimie...).'},
+        {id:'7.4',ref:'7.4',text:'La communication interne sur les événements SST (accidents, presqu\'accidents) est assurée.',hint:'Affichage des statistiques AT, flash sécurité, réunions sécurité, diffusion des leçons apprises.'},
+        {id:'7.5',ref:'7.5',text:'Les informations documentées SST (procédures, enregistrements, DUERP) sont maîtrisées.',hint:'DUERP, fiches de données de sécurité (FDS), consignes de sécurité — accessibles et à jour.'}
+      ]
+    },
+    { id:'8', title:'Réalisation des activités opérationnelles', icon:'⚙️',
+      reqs:[
+        {id:'8.1.1',ref:'8.1.1',text:'La maîtrise opérationnelle des risques significatifs est assurée (procédures, consignes, équipements).',hint:'Procédures de travail sécurisé pour tâches à risque, EPC et EPI disponibles et utilisés.'},
+        {id:'8.1.3',ref:'8.1.3',text:'Un processus de gestion des modifications ayant un impact SST est en place.',hint:'Évaluation des risques préalable à toute modification d\'installation, processus ou organisation.'},
+        {id:'8.1.4',ref:'8.1.4',text:'Les prestataires, sous-traitants et fournisseurs sont maîtrisés pour les risques SST.',hint:'Plans de prévention/protocoles de sécurité pour interventions externes, exigences SST aux fournisseurs.'},
+        {id:'8.2',ref:'8.2',text:'Des plans d\'urgence sont établis, testés et connus des travailleurs.',hint:'Plan d\'évacuation, exercices (au moins 1/an), équipes de première intervention formées, PPMS si applicable.'}
+      ]
+    },
+    { id:'9', title:'Évaluation des performances', icon:'📊',
+      reqs:[
+        {id:'9.1.1',ref:'9.1.1',text:'Les indicateurs SST (TF, TG, nombre AT/presqu\'accidents) sont mesurés et analysés.',hint:'Tableaux de bord mensuels, comparaisons sectorielles, tendances commentées.'},
+        {id:'9.1.2',ref:'9.1.2',text:'Les accidents, incidents et presqu\'accidents font l\'objet d\'une enquête et d\'actions correctives.',hint:'Rapports d\'enquête disponibles, causes racines identifiées, actions préventives documentées.'},
+        {id:'9.1.3',ref:'9.1.3',text:'La conformité aux exigences légales SST est évaluée périodiquement.',hint:'Évaluation de conformité réglementaire annuelle, registre des vérifications périodiques à jour.'},
+        {id:'9.2',ref:'9.2',text:'Un programme d\'audits internes SST est réalisé par des auditeurs compétents.',hint:'Plan d\'audit SST, habilitations auditeurs, rapports et actions correctives suivies.'},
+        {id:'9.3',ref:'9.3',text:'La revue de direction intègre les résultats SST et prend des décisions d\'amélioration.',hint:'CR de revue incluant : AT, indicateurs, audits, conformité légale, ressources SST.'}
+      ]
+    },
+    { id:'10', title:'Amélioration', icon:'🔄',
+      reqs:[
+        {id:'10.1',ref:'10.1',text:'Les incidents, NC et AC SST sont gérés avec analyse de cause et déploiement des leçons apprises.',hint:'Procédure de traitement des incidents, 5 Pourquoi ou Arbre des Causes, retour d\'expérience formalisé.'},
+        {id:'10.2',ref:'10.2',text:'L\'amélioration continue du SMO est planifiée avec des objectifs mesurables.',hint:'Plan de prévention pluriannuel, réduction mesurable du taux de fréquence, actions issues de tous les processus.'}
+      ]
+    }
+  ]
+},
+
+iso14001: {
+  id:'iso14001', name:'ISO 14001:2015', short:'ISO 14001',
+  desc:'Système de Management Environnemental',
+  icon:'🌿',
+  chapters:[
+    { id:'4', title:'Contexte de l\'organisme', icon:'🏢',
+      reqs:[
+        {id:'4.1',ref:'4.1',text:'Les enjeux internes et externes ayant une incidence sur la performance environnementale sont déterminés.',hint:'Contexte environnemental : réglementation locale, sensibilité du milieu, parties prenantes, enjeux climatiques.'},
+        {id:'4.2',ref:'4.2',text:'Les besoins et attentes des parties intéressées (riverains, autorités, clients) sont déterminés.',hint:'Registre des parties intéressées avec leurs exigences environnementales et fréquences de surveillance.'},
+        {id:'4.4',ref:'4.4',text:'Le SME est établi, documenté et maintenu pour améliorer la performance environnementale.',hint:'Procédures, cartographie des processus environnementaux, indicateurs de performance.'}
+      ]
+    },
+    { id:'5', title:'Leadership', icon:'🏆',
+      reqs:[
+        {id:'5.1',ref:'5.1',text:'La direction démontre son engagement envers le SME (ressources, objectifs, communication).',hint:'Budget environnement alloué, objectifs ambitieux fixés par la direction, communication interne.'},
+        {id:'5.2',ref:'5.2',text:'La politique environnementale est établie, appropriée, inclut l\'engagement à l\'amélioration continue.',hint:'Document approuvé, affiché, communiqué aux parties intéressées pertinentes.'},
+        {id:'5.3',ref:'5.3',text:'Les responsabilités et autorités environnementales sont définies et communiquées.',hint:'Responsable environnement désigné, délégations documentées, interface avec autorités.'}
+      ]
+    },
+    { id:'6', title:'Planification', icon:'📋',
+      reqs:[
+        {id:'6.1.1',ref:'6.1.1',text:'Les aspects environnementaux significatifs (AES) sont identifiés, évalués et tenus à jour.',hint:'Registre des aspects/impacts (air, eau, sol, déchets, énergie, bruit, biodiversité) avec cotation de significativité.'},
+        {id:'6.1.2',ref:'6.1.2',text:'Les exigences légales environnementales applicables sont identifiées et respectées.',hint:'Veille réglementaire, ICPE, rejets autorisés, permis en cours de validité, inspections DREAL.'},
+        {id:'6.1.3',ref:'6.1.3',text:'Les risques et opportunités environnementaux sont évalués et des actions sont planifiées.',hint:'Risques (pollution accidentelle, dépassement seuils) et opportunités (économies énergie, valorisation déchets).'},
+        {id:'6.2',ref:'6.2',text:'Les objectifs environnementaux sont mesurables, cohérents avec la politique et planifiés.',hint:'Objectifs chiffrés sur AES principaux (réduction CO2, déchets, eau), plans d\'actions avec responsables.'}
+      ]
+    },
+    { id:'7', title:'Support', icon:'🛠️',
+      reqs:[
+        {id:'7.2',ref:'7.2',text:'Les compétences environnementales nécessaires (pilotes, opérateurs postes à risque) sont assurées.',hint:'Formation réglementation ICPE, gestion des déchets, conduite d\'installation à risque, habilitations.'},
+        {id:'7.3',ref:'7.3',text:'Le personnel est sensibilisé aux aspects environnementaux significatifs et aux procédures d\'urgence.',hint:'Formations initiales, habilitations, exercices de dépollution, connaissance des gestes d\'urgence.'},
+        {id:'7.4',ref:'7.4',text:'La communication environnementale interne et externe est assurée.',hint:'Rapports annuels environnementaux, bilan carbone, communication riverains si requis, déclaration ICPE.'}
+      ]
+    },
+    { id:'8', title:'Réalisation des activités opérationnelles', icon:'⚙️',
+      reqs:[
+        {id:'8.1',ref:'8.1',text:'Les activités associées aux AES sont maîtrisées par des procédures et critères opérationnels.',hint:'Procédures de gestion des déchets, rejets, consommations — affichées aux postes concernés.'},
+        {id:'8.2',ref:'8.2',text:'Un plan d\'urgence environnementale est établi, testé et connu des équipes.',hint:'Plan de dépollution, exercices annuels, kits anti-pollution disponibles, contacts d\'urgence affichés.'},
+        {id:'8.3',ref:'8.1.1',text:'La perspective cycle de vie est prise en compte dans la conception et les achats.',hint:'Éco-conception, cahiers des charges fournisseurs avec exigences environnementales, fin de vie des produits.'}
+      ]
+    },
+    { id:'9', title:'Évaluation des performances', icon:'📊',
+      reqs:[
+        {id:'9.1',ref:'9.1',text:'Les indicateurs de performance environnementale (énergie, eau, déchets, rejets) sont mesurés et analysés.',hint:'Tableaux de bord mensuels, comparaison aux objectifs, analyses des dérives.'},
+        {id:'9.1.2',ref:'9.1.2',text:'La conformité aux exigences légales environnementales est évaluée et documentée.',hint:'Évaluation de conformité annuelle, auto-surveillance des rejets, contrôles réglementaires à jour.'},
+        {id:'9.2',ref:'9.2',text:'Des audits internes environnementaux sont planifiés et réalisés par des auditeurs compétents.',hint:'Programme d\'audit SME, rapports disponibles, actions correctives suivies.'},
+        {id:'9.3',ref:'9.3',text:'La revue de direction inclut les résultats environnementaux et définit des actions d\'amélioration.',hint:'CR de revue couvrant : indicateurs, conformité légale, AES, audits, plaintes, recommandations.'}
+      ]
+    },
+    { id:'10', title:'Amélioration', icon:'🔄',
+      reqs:[
+        {id:'10.2',ref:'10.2',text:'Les non-conformités et incidents environnementaux sont traités avec analyse de cause et AC efficaces.',hint:'Procédure incidents (déversements, dépassements) — analyse cause, mesures immédiates, AC préventives.'},
+        {id:'10.3',ref:'10.3',text:'L\'amélioration continue de la performance environnementale est démontrée par des données.',hint:'Tendances positives sur indicateurs clés, innovations environnementales, certifications complémentaires.'}
+      ]
+    }
+  ]
+}
+
+}; // end STANDARDS
+
+
+// ============================================================
+// APPLICATION STATE
+// ============================================================
+let state = {
+  view: 'dashboard',
+  audits: [],           // all saved audits
+  current: null,        // current audit object
+  currentChapter: 0,    // index into chapters array
+  filter: 'all',
+  saveTimer: null
+};
+
+// Audit object shape:
+// { id, standard, meta:{company,site,date,type,auditor,team,scope},
+//   scores:{reqId: {score:'C'|'NCm'|'NCM'|'OBS'|'NA', notes:''}},
+//   created, updated }
+
+// ============================================================
+// STORAGE
+// ============================================================
+function loadAudits() {
+  try { state.audits = JSON.parse(localStorage.getItem('7as_audits') || '[]'); }
+  catch(e) { state.audits = []; }
+}
+function saveAudits() {
+  localStorage.setItem('7as_audits', JSON.stringify(state.audits));
+}
+function doSave() {
+  if (!state.current) return;
+  state.current.updated = new Date().toISOString();
+  const idx = state.audits.findIndex(a => a.id === state.current.id);
+  if (idx >= 0) state.audits[idx] = state.current;
+  else state.audits.unshift(state.current);
+  saveAudits();
+  flashSave();
+}
+function autoSave() { doSave(); }
+function flashSave() {
+  const dot = document.getElementById('saveDot');
+  const lbl = document.getElementById('saveLabel');
+  if (dot) { dot.style.display='inline-block'; lbl.style.display='inline'; }
+  clearTimeout(state.saveTimer);
+  state.saveTimer = setTimeout(() => {
+    if (dot) { dot.style.display='none'; lbl.style.display='none'; }
+  }, 2500);
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function nav(view) {
+  if (state.current && (state.view === 'conduct' || state.view === 'results')) doSave();
+  state.view = view;
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = document.getElementById('view-' + view);
+  if (el) el.classList.add('active');
+  const back = document.getElementById('tbBack');
+  const saveDot = document.getElementById('saveDot');
+  const saveLabel = document.getElementById('saveLabel');
+  const page = document.getElementById('tbPage');
+  const pages = {
+    dashboard: "OUTIL D'AUDIT QHSE",
+    setup: 'NOUVEL AUDIT',
+    conduct: 'EN COURS D\'AUDIT',
+    results: 'RÉSULTATS',
+    report: 'RAPPORT'
+  };
+  if (page) page.textContent = pages[view] || '';
+  if (back) back.style.display = (view !== 'dashboard') ? 'flex' : 'none';
+  if (view === 'dashboard') {
+    if (saveDot) saveDot.style.display = 'none';
+    if (saveLabel) saveLabel.style.display = 'none';
+    renderDashboard();
+  }
+  if (view === 'setup') renderSetup();
+  if (view === 'conduct') renderConduct();
+  if (view === 'results') renderResults();
+  if (view === 'report') renderReport();
+  window.scrollTo(0,0);
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  loadAudits();
+  const list = document.getElementById('auditList');
+  const count = document.getElementById('auditCount');
+  if (!list) return;
+
+  let totalNC = 0, totalScores = [], numAudits = state.audits.length;
+  state.audits.forEach(a => {
+    const sc = calcScore(a);
+    if (sc.pct !== null) totalScores.push(sc.pct);
+    totalNC += sc.NCM + sc.NCm;
+  });
+  const d1 = document.getElementById('dStatAudits'); if(d1) d1.textContent = numAudits;
+  const d2 = document.getElementById('dStatNC'); if(d2) d2.textContent = totalNC;
+  const d3 = document.getElementById('dStatAvg');
+  if(d3) d3.textContent = totalScores.length ? Math.round(totalScores.reduce((a,b)=>a+b,0)/totalScores.length)+'%' : '—';
+  if(count) count.textContent = numAudits ? `(${numAudits})` : '';
+
+  if (!numAudits) {
+    list.innerHTML = `<div class="empty-state"><div class="empty-icon">📋</div><p>Aucun audit enregistré.<br>Cliquez sur <strong>Nouvel audit</strong> pour commencer.</p></div>`;
+    return;
+  }
+  list.innerHTML = state.audits.map(a => {
+    const sc = calcScore(a);
+    const std = STANDARDS[a.standard];
+    const pct = sc.pct !== null ? sc.pct + '%' : '—';
+    const pctColor = sc.pct >= 80 ? '#16A34A' : sc.pct >= 60 ? '#D97706' : sc.pct !== null ? '#DC2626' : '#858A91';
+    const total = std ? countTotal(std) : '?';
+    const done = Object.keys(a.scores||{}).length;
+    return `<div class="audit-row">
+      <div class="ar-icon">${std ? std.icon : '📋'}</div>
+      <div class="ar-info">
+        <div class="ar-title">${esc(a.meta.company || 'Sans nom')} — ${esc(a.meta.type || 'Audit')}</div>
+        <div class="ar-meta">${std ? std.short : '?'} · ${a.meta.date || 'sans date'} · ${done}/${total} réponses</div>
+      </div>
+      <div class="ar-score">
+        <div class="ar-score-num" style="color:${pctColor}">${pct}</div>
+        <div class="ar-score-label">Score</div>
+      </div>
+      <div class="ar-actions">
+        <button class="btn btn-outline btn-sm" onclick="resumeAudit('${a.id}')">Reprendre</button>
+        <button class="btn btn-outline btn-sm btn-danger" onclick="deleteAudit('${a.id}',event)">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function resumeAudit(id) {
+  const a = state.audits.find(x => x.id === id);
+  if (!a) return;
+  state.current = JSON.parse(JSON.stringify(a)); // deep copy
+  state.currentChapter = 0;
+  nav('conduct');
+}
+
+function deleteAudit(id, e) {
+  e.stopPropagation();
+  if (!confirm('Supprimer cet audit ? Cette action est irréversible.')) return;
+  state.audits = state.audits.filter(a => a.id !== id);
+  saveAudits();
+  renderDashboard();
+}
+
+// ============================================================
+// SETUP
+// ============================================================
+function renderSetup() {
+  const grid = document.getElementById('stdGrid');
+  if (!grid) return;
+  // Set today's date
+  const dateInput = document.getElementById('sDate');
+  if (dateInput && !dateInput.value) dateInput.value = new Date().toISOString().split('T')[0];
+  
+  grid.innerHTML = Object.values(STANDARDS).map(s =>
+    `<div class="std-card${s.id==='iatf16949'?' sel':''}" onclick="selectStd('${s.id}',this)" data-std="${s.id}">
+      <div class="std-short">${s.icon} ${s.short}</div>
+      <div class="std-name">${s.name}</div>
+      <div class="std-desc">${s.desc}</div>
+      <div class="std-count">${countTotal({chapters:s.chapters})} questions · ${s.chapters.length} chapitres</div>
+    </div>`
+  ).join('');
+}
+
+function selectStd(id, el) {
+  document.querySelectorAll('.std-card').forEach(c => c.classList.remove('sel'));
+  el.classList.add('sel');
+}
+
+function startAudit() {
+  const stdEl = document.querySelector('.std-card.sel');
+  if (!stdEl) { alert('Veuillez sélectionner un référentiel.'); return; }
+  const stdId = stdEl.dataset.std;
+  const company = document.getElementById('sCompany').value.trim();
+  if (!company) { document.getElementById('sCompany').focus(); alert('L\'entreprise auditée est requise.'); return; }
+  state.current = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2,6),
+    standard: stdId,
+    meta: {
+      company,
+      site: document.getElementById('sSite').value.trim(),
+      date: document.getElementById('sDate').value,
+      type: document.getElementById('sType').value,
+      auditor: document.getElementById('sAuditor').value.trim(),
+      team: document.getElementById('sTeam').value.trim(),
+      scope: document.getElementById('sScope').value.trim()
+    },
+    scores: {},
+    created: new Date().toISOString(),
+    updated: new Date().toISOString()
+  };
+  state.currentChapter = 0;
+  state.filter = 'all';
+  doSave();
+  nav('conduct');
+}
+
+// ============================================================
+// CONDUCT
+// ============================================================
+function renderConduct() {
+  if (!state.current) { nav('dashboard'); return; }
+  const std = STANDARDS[state.current.standard];
+  if (!std) return;
+  // Sidebar header
+  document.getElementById('sbName').textContent = state.current.meta.company || 'Audit';
+  document.getElementById('sbStd').textContent = std.short;
+  updateSidebarProgress();
+  renderSidebarNav();
+  renderChapter();
+}
+
+function updateSidebarProgress() {
+  if (!state.current) return;
+  const std = STANDARDS[state.current.standard];
+  const total = countTotal(std);
+  const done = Object.keys(state.current.scores).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+  const fill = document.getElementById('sbFill');
+  const doneEl = document.getElementById('sbDone');
+  const pctEl = document.getElementById('sbPct');
+  if (fill) fill.style.width = pct + '%';
+  if (doneEl) doneEl.textContent = done + '/' + total;
+  if (pctEl) pctEl.textContent = pct + '%';
+}
+
+function renderSidebarNav() {
+  if (!state.current) return;
+  const std = STANDARDS[state.current.standard];
+  const nav_el = document.getElementById('sbNav');
+  if (!nav_el) return;
+  nav_el.innerHTML = std.chapters.map((ch, idx) => {
+    const sc = chapterScore(ch);
+    const done = ch.reqs.filter(r => state.current.scores[r.id]).length;
+    const total = ch.reqs.length;
+    const pct = sc.pct !== null ? sc.pct : (done > 0 ? Math.round(done/total*50) : 0);
+    const color = sc.pct !== null ? (sc.pct >= 80 ? '#16A34A' : sc.pct >= 60 ? '#D97706' : '#DC2626') : '#C8892A';
+    return `<button class="sb-chap${idx===state.currentChapter?' active':''}" onclick="goChapter(${idx})">
+      <span class="sb-chap-icon">${ch.icon}</span>
+      <div class="sb-chap-info">
+        <div class="sb-chap-title">§${ch.id} ${ch.title}</div>
+        <div class="sb-chap-meta">${done}/${total} répondus</div>
+        <div class="sb-mini-bar"><div class="sb-mini-fill" style="width:${done/total*100}%;background:${color}"></div></div>
+      </div>
+      <span class="sb-chap-score" style="color:${color}">${sc.pct !== null ? sc.pct+'%' : ''}</span>
+    </button>`;
+  }).join('');
+}
+
+function goChapter(idx) {
+  state.currentChapter = idx;
+  state.filter = 'all';
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.toggle('active', b.textContent.trim()==='Tous'));
+  renderChapter();
+  renderSidebarNav();
+}
+
+function renderChapter() {
+  if (!state.current) return;
+  const std = STANDARDS[state.current.standard];
+  const ch = std.chapters[state.currentChapter];
+  if (!ch) return;
+
+  document.getElementById('chIcon').textContent = ch.icon;
+  document.getElementById('chRef').textContent = `Clause ${ch.id} — ${std.short}`;
+  document.getElementById('chTitle').textContent = ch.title;
+
+  // Chapter stats
+  const sc = chapterScore(ch);
+  const statsEl = document.getElementById('chStats');
+  const done = ch.reqs.filter(r => state.current.scores[r.id]).length;
+  if (statsEl) statsEl.innerHTML = [
+    `<span class="ch-stat">${done}/${ch.reqs.length} répondus</span>`,
+    sc.C ? `<span class="ch-stat c"><b>${sc.C}</b> C</span>` : '',
+    sc.NCm ? `<span class="ch-stat ncm"><b>${sc.NCm}</b> NCm</span>` : '',
+    sc.NCM ? `<span class="ch-stat NCM"><b>${sc.NCM}</b> NCM</span>` : '',
+    sc.OBS ? `<span class="ch-stat obs"><b>${sc.OBS}</b> OBS</span>` : '',
+    sc.pct !== null ? `<span class="ch-stat" style="margin-left:auto;font-weight:700">Score: ${sc.pct}%</span>` : ''
+  ].join('');
+
+  // Requirements
+  renderRequirements(ch);
+
+  // Nav buttons
+  const prev = document.getElementById('btnPrev');
+  const next = document.getElementById('btnNext');
+  const finish = document.getElementById('btnFinish');
+  const isLast = state.currentChapter === std.chapters.length - 1;
+  if (prev) { prev.disabled = state.currentChapter === 0; prev.style.opacity = state.currentChapter===0?'.4':'1'; }
+  if (next) { next.style.display = isLast ? 'none' : 'flex'; }
+  if (finish) { finish.style.display = isLast ? 'flex' : 'none'; }
+}
+
+function renderRequirements(ch) {
+  const list = document.getElementById('reqList');
+  if (!list) return;
+  const reqs = ch.reqs.filter(r => {
+    const sc = state.current.scores[r.id];
+    if (state.filter === 'all') return true;
+    if (state.filter === 'unanswered') return !sc;
+    if (state.filter === 'NCM') return sc && sc.score === 'NCM';
+    if (state.filter === 'NCm') return sc && sc.score === 'NCm';
+    if (state.filter === 'OBS') return sc && sc.score === 'OBS';
+    return true;
+  });
+  if (!reqs.length) {
+    list.innerHTML = '<div style="text-align:center;padding:40px;color:var(--ink3);font-size:.88rem">Aucune exigence ne correspond à ce filtre.</div>';
+    return;
+  }
+  list.innerHTML = reqs.map(r => {
+    const saved = state.current.scores[r.id] || {};
+    const score = saved.score || '';
+    const notes = saved.notes || '';
+    const scoreClass = score ? 's-'+score : '';
+    const notesOpen = notes || score ? 'open' : '';
+    return `<div class="req ${scoreClass}" id="req-${r.id}">
+      <div class="req-head">
+        <span class="req-ref">${r.ref}</span>
+        <span class="req-text">${esc(r.text)}</span>
+        <button class="req-hint-btn" onclick="toggleHint('${r.id}')">💡 Conseil</button>
+      </div>
+      <div class="req-hint" id="hint-${r.id}"><strong>📌 Aide audit :</strong> ${esc(r.hint)}</div>
+      <div class="req-score">
+        ${['C','NCm','NCM','OBS','NA'].map(s =>
+          `<button class="sc sc-${s}${score===s?' on':''}" onclick="setScore('${r.id}','${s}')" title="${scoreLabel(s)}">${s}</button>`
+        ).join('')}
+        <span class="sc-sep"></span>
+        <button class="sc" style="background:var(--ink4);color:var(--ink3);border-color:var(--ink4);font-size:.7rem" onclick="toggleNotes('${r.id}')">📝 Notes</button>
+      </div>
+      <div class="req-notes ${notesOpen}" id="notes-${r.id}">
+        <div class="notes-lbl">Constats / Preuves / Références documentaires :</div>
+        <textarea class="notes-ta" rows="2" onchange="setNotes('${r.id}',this.value)" onblur="setNotes('${r.id}',this.value)">${esc(notes)}</textarea>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function scoreLabel(s) {
+  return {C:'Conforme',NCm:'Non-conformité mineure',NCM:'Non-conformité majeure',OBS:'Observation',NA:'Non applicable'}[s]||s;
+}
+
+function setScore(reqId, score) {
+  if (!state.current.scores[reqId]) state.current.scores[reqId] = {score:'',notes:''};
+  // Toggle off if clicking same
+  if (state.current.scores[reqId].score === score) {
+    state.current.scores[reqId].score = '';
+  } else {
+    state.current.scores[reqId].score = score;
+  }
+  // Update UI
+  const card = document.getElementById('req-'+reqId);
+  if (card) {
+    card.className = 'req' + (state.current.scores[reqId].score ? ' s-'+state.current.scores[reqId].score : '');
+    card.querySelectorAll('.sc').forEach(b => {
+      b.classList.toggle('on', b.textContent.trim() === state.current.scores[reqId].score);
+    });
+    // Auto-open notes for NCM/NCm
+    if (['NCM','NCm','OBS'].includes(score)) {
+      const notesDiv = document.getElementById('notes-'+reqId);
+      if (notesDiv) notesDiv.classList.add('open');
+    }
+  }
+  updateSidebarProgress();
+  renderSidebarNav();
+  updateChapterStats();
+  scheduleAutoSave();
+}
+
+function setNotes(reqId, value) {
+  if (!state.current.scores[reqId]) state.current.scores[reqId] = {score:'',notes:''};
+  state.current.scores[reqId].notes = value;
+  scheduleAutoSave();
+}
+
+function toggleHint(reqId) {
+  const el = document.getElementById('hint-'+reqId);
+  if (el) el.classList.toggle('open');
+}
+
+function toggleNotes(reqId) {
+  const el = document.getElementById('notes-'+reqId);
+  if (el) el.classList.toggle('open');
+}
+
+function updateChapterStats() {
+  const std = STANDARDS[state.current.standard];
+  const ch = std.chapters[state.currentChapter];
+  if (!ch) return;
+  const sc = chapterScore(ch);
+  const done = ch.reqs.filter(r => state.current.scores[r.id] && state.current.scores[r.id].score).length;
+  const statsEl = document.getElementById('chStats');
+  if (statsEl) statsEl.innerHTML = [
+    `<span class="ch-stat">${done}/${ch.reqs.length} répondus</span>`,
+    sc.C ? `<span class="ch-stat c"><b>${sc.C}</b> C</span>` : '',
+    sc.NCm ? `<span class="ch-stat ncm"><b>${sc.NCm}</b> NCm</span>` : '',
+    sc.NCM ? `<span class="ch-stat NCM"><b>${sc.NCM}</b> NCM</span>` : '',
+    sc.OBS ? `<span class="ch-stat obs"><b>${sc.OBS}</b> OBS</span>` : '',
+    sc.pct !== null ? `<span class="ch-stat" style="margin-left:auto;font-weight:700">Score: ${sc.pct}%</span>` : ''
+  ].join('');
+}
+
+let saveDebounce = null;
+function scheduleAutoSave() {
+  clearTimeout(saveDebounce);
+  saveDebounce = setTimeout(doSave, 3000);
+}
+
+function prevChapter() {
+  if (state.currentChapter > 0) goChapter(state.currentChapter - 1);
+}
+function nextChapter() {
+  const std = STANDARDS[state.current.standard];
+  if (state.currentChapter < std.chapters.length - 1) goChapter(state.currentChapter + 1);
+}
+
+function setFilter(f, btn) {
+  state.filter = f;
+  document.querySelectorAll('.fbtn').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+  const std = STANDARDS[state.current.standard];
+  renderRequirements(std.chapters[state.currentChapter]);
+}
+
+// ============================================================
+// SCORING CALCULATIONS
+// ============================================================
+function chapterScore(ch) {
+  if (!state.current) return {C:0,NCm:0,NCM:0,OBS:0,NA:0,pct:null};
+  let C=0,NCm=0,NCM=0,OBS=0,NA=0,pts=0,max=0;
+  ch.reqs.forEach(r => {
+    const s = (state.current.scores[r.id]||{}).score;
+    if (!s) return;
+    if (s==='C'){C++;pts+=2;max+=2;}
+    else if (s==='NCm'){NCm++;pts+=1;max+=2;}
+    else if (s==='NCM'){NCM++;pts+=0;max+=2;}
+    else if (s==='OBS'){OBS++;pts+=2;max+=2;}
+    else if (s==='NA'){NA++;}
+  });
+  const pct = max>0 ? Math.round(pts/max*100) : null;
+  return {C,NCm,NCM,OBS,NA,pct,pts,max};
+}
+
+function calcScore(audit) {
+  if (!audit) return {C:0,NCm:0,NCM:0,OBS:0,NA:0,pct:null};
+  const std = STANDARDS[audit.standard];
+  if (!std) return {C:0,NCm:0,NCM:0,OBS:0,NA:0,pct:null};
+  let C=0,NCm=0,NCM=0,OBS=0,NA=0,pts=0,max=0;
+  std.chapters.forEach(ch => ch.reqs.forEach(r => {
+    const s = (audit.scores[r.id]||{}).score;
+    if (!s) return;
+    if (s==='C'){C++;pts+=2;max+=2;}
+    else if (s==='NCm'){NCm++;pts+=1;max+=2;}
+    else if (s==='NCM'){NCM++;pts+=0;max+=2;}
+    else if (s==='OBS'){OBS++;pts+=2;max+=2;}
+    else if (s==='NA'){NA++;}
+  }));
+  const pct = max>0 ? Math.round(pts/max*100) : null;
+  return {C,NCm,NCM,OBS,NA,pct};
+}
+
+function countTotal(std) {
+  return std.chapters.reduce((sum, ch) => sum + ch.reqs.length, 0);
+}
+
+// ============================================================
+// RESULTS VIEW
+// ============================================================
+function renderResults() {
+  if (!state.current) { nav('dashboard'); return; }
+  doSave();
+  const std = STANDARDS[state.current.standard];
+  const sc = calcScore(state.current);
+  
+  document.getElementById('resTitle').textContent = `Résultats — ${state.current.meta.company || 'Audit'}`;
+  document.getElementById('resSub').textContent =
+    `${std.name} · Audit ${state.current.meta.type} · ${state.current.meta.date || ''} · ${state.current.meta.auditor || ''}`;
+
+  // Ring
+  const pct = sc.pct !== null ? sc.pct : 0;
+  const circumference = 238.76;
+  const offset = circumference * (1 - pct/100);
+  const ring = document.getElementById('ringFill');
+  if (ring) {
+    ring.style.strokeDashoffset = offset;
+    ring.style.stroke = pct >= 80 ? '#16A34A' : pct >= 60 ? '#D97706' : '#DC2626';
+    setTimeout(() => { ring.style.strokeDashoffset = offset; }, 50);
+  }
+  const ringNum = document.getElementById('ringNum');
+  if (ringNum) ringNum.textContent = sc.pct !== null ? sc.pct+'%' : '—';
+
+  ['C','NCm','NCM','OBS','NA'].forEach(k => {
+    const el = document.getElementById('r'+k);
+    if (el) el.textContent = sc[k];
+  });
+
+  // Verdict
+  const vBox = document.getElementById('verdictBox');
+  if (vBox) {
+    let cls, title, desc;
+    if (sc.pct === null) { vBox.style.display='none'; }
+    else if (sc.NCM === 0 && sc.pct >= 80) {
+      cls='ok'; title='✅ Recommandé pour certification';
+      desc=`Score ${sc.pct}% sans non-conformité majeure. Système conforme aux exigences — certification envisageable.`;
+    } else if (sc.NCM <= 2 && sc.pct >= 65) {
+      cls='warn'; title='⚠️ Certification possible avec Plan d\'Actions Correctives';
+      desc=`Score ${sc.pct}%, ${sc.NCM} NCM. Un PAC documenté avec délais est requis avant certification.`;
+    } else {
+      cls='fail'; title='🔴 Non recommandé — Audit de suivi requis';
+      desc=`Score ${sc.pct}%, ${sc.NCM} non-conformités majeures. Des améliorations significatives sont nécessaires.`;
+    }
+    if (sc.pct !== null) {
+      vBox.style.display='';
+      vBox.className = 'verdict ' + cls;
+      vBox.innerHTML = `<div class="verdict-t">${title}</div><div class="verdict-d">${desc}</div>`;
+    }
+  }
+
+  // Chapter scores
+  const chapEl = document.getElementById('chapScores');
+  if (chapEl) {
+    chapEl.innerHTML = std.chapters.map(ch => {
+      const csc = chapterScore(ch);
+      const pct2 = csc.pct !== null ? csc.pct : 0;
+      const color = csc.pct === null ? '#EAECEE' : csc.pct >= 80 ? '#16A34A' : csc.pct >= 60 ? '#D97706' : '#DC2626';
+      const done = ch.reqs.filter(r => (state.current.scores[r.id]||{}).score).length;
+      return `<div class="csr">
+        <span class="csr-name" title="§${ch.id} ${ch.title}">§${ch.id} ${ch.title}</span>
+        <div class="csr-bar"><div class="csr-fill" style="width:${pct2}%;background:${color}"></div></div>
+        <span class="csr-pct" style="color:${color}">${csc.pct !== null ? csc.pct+'%' : done+'/'+ch.reqs.length}</span>
+      </div>`;
+    }).join('');
+  }
+
+  // NC table
+  const ncs = [];
+  std.chapters.forEach(ch => ch.reqs.forEach(r => {
+    const saved = state.current.scores[r.id] || {};
+    if (['NCM','NCm','OBS'].includes(saved.score)) {
+      ncs.push({ ref: r.ref, chapter: ch.title, text: r.text, score: saved.score, notes: saved.notes || '' });
+    }
+  }));
+  const ncCount = document.getElementById('ncCount');
+  if (ncCount) ncCount.textContent = ncs.length;
+  const tbody = document.getElementById('ncBody');
+  if (tbody) {
+    if (!ncs.length) {
+      tbody.innerHTML = `<tr><td colspan="4" class="nc-empty">🎉 Aucune non-conformité détectée sur les exigences évaluées.</td></tr>`;
+    } else {
+      tbody.innerHTML = ncs.map(nc => {
+        const pill = `<span class="pill p-${nc.score}">${nc.score}</span>`;
+        const sev = nc.score === 'NCM' ? 'var(--c-NCM)' : nc.score === 'NCm' ? 'var(--c-ncm)' : 'var(--c-obs)';
+        return `<tr>
+          <td class="nc-ref">${esc(nc.ref)}</td>
+          <td class="nc-severity">${pill}</td>
+          <td style="max-width:300px">${esc(nc.text)}</td>
+          <td style="color:var(--ink2);font-size:.78rem">${nc.notes ? esc(nc.notes) : '<em style="color:var(--ink3)">Aucune note</em>'}</td>
+        </tr>`;
+      }).join('');
+    }
+  }
+}
+
+// ============================================================
+// REPORT VIEW
+// ============================================================
+function renderReport() {
+  if (!state.current) { nav('dashboard'); return; }
+  const std = STANDARDS[state.current.standard];
+  const sc = calcScore(state.current);
+  const m = state.current.meta;
+
+  let verdict, vCls;
+  if (sc.pct === null) { verdict = 'Audit incomplet'; vCls = 'warn'; }
+  else if (sc.NCM === 0 && sc.pct >= 80) { verdict = `✅ Recommandé pour certification (${sc.pct}%)`; vCls = 'ok'; }
+  else if (sc.NCM <= 2 && sc.pct >= 65) { verdict = `⚠️ Certification possible avec PAC (${sc.pct}%)`; vCls = 'warn'; }
+  else { verdict = `🔴 Non recommandé — Audit de suivi requis (${sc.pct || 0}%)`; vCls = 'fail'; }
+
+  // NC list
+  const ncs = [];
+  std.chapters.forEach(ch => ch.reqs.forEach(r => {
+    const saved = state.current.scores[r.id] || {};
+    if (['NCM','NCm','OBS'].includes(saved.score)) {
+      ncs.push({ ref: r.ref, chapter: ch.title, text: r.text, score: saved.score, notes: saved.notes || '', hint: r.hint });
+    }
+  }));
+
+  const rptBody = document.getElementById('rptBody');
+  if (!rptBody) return;
+
+  const total = countTotal(std);
+  const answered = Object.keys(state.current.scores).filter(k => state.current.scores[k].score).length;
+
+  rptBody.innerHTML = `
+    <div class="rpt-cover">
+      <div class="rpt-logo-mark">7AS Consulting & Audit</div>
+      <div class="rpt-logo-sub">L'EXCELLENCE INDUSTRIELLE</div>
+      <div class="rpt-divider"></div>
+      <div class="rpt-doc-title">Rapport d'Audit ${esc(std.short)}</div>
+      <div class="rpt-doc-sub">Audit ${esc(m.type||'')} — ${esc(std.name)}</div>
+      <dl class="rpt-meta">
+        <dt>Entreprise</dt><dd>${esc(m.company||'—')}</dd>
+        <dt>Site</dt><dd>${esc(m.site||'—')}</dd>
+        <dt>Date</dt><dd>${m.date||'—'}</dd>
+        <dt>Type d'audit</dt><dd>${esc(m.type||'—')}</dd>
+        <dt>Auditeur</dt><dd>${esc(m.auditor||'—')}</dd>
+        <dt>Équipe</dt><dd>${esc(m.team||'—')}</dd>
+        <dt>Référentiel</dt><dd>${esc(std.name)}</dd>
+        <dt>Périmètre</dt><dd>${esc(m.scope||'—')}</dd>
+      </dl>
+    </div>
+
+    <div class="rpt-sec-title">1. Résumé Exécutif</div>
+    <div class="rpt-verdict ${vCls}" style="border-color:${vCls==='ok'?'#16A34A':vCls==='warn'?'#D97706':'#DC2626'};background:${vCls==='ok'?'#DCFCE7':vCls==='warn'?'#FEF3C7':'#FEE2E2'}">
+      <strong style="font-size:1rem">${verdict}</strong>
+    </div>
+    <table class="rpt-tbl">
+      <thead><tr><th>Indicateur</th><th>Valeur</th><th>Indicateur</th><th>Valeur</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Score global</td><td><strong>${sc.pct !== null ? sc.pct+'%' : 'N/C'}</strong></td>
+          <td>Exigences évaluées</td><td>${answered} / ${total}</td>
+        </tr>
+        <tr>
+          <td>Conformes (C)</td><td style="color:#16A34A"><strong>${sc.C}</strong></td>
+          <td>Observations (OBS)</td><td style="color:#7C3AED">${sc.OBS}</td>
+        </tr>
+        <tr>
+          <td>NC mineures (NCm)</td><td style="color:#D97706"><strong>${sc.NCm}</strong></td>
+          <td>NC majeures (NCM)</td><td style="color:#DC2626"><strong>${sc.NCM}</strong></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="rpt-sec-title">2. Scores par Chapitre</div>
+    <table class="rpt-tbl">
+      <thead><tr><th>Chapitre</th><th>Répondus</th><th>Score</th><th>C</th><th>NCm</th><th>NCM</th><th>OBS</th></tr></thead>
+      <tbody>${std.chapters.map(ch => {
+        const csc = chapterScore(ch);
+        const done = ch.reqs.filter(r => (state.current.scores[r.id]||{}).score).length;
+        return `<tr>
+          <td>§${ch.id} ${esc(ch.title)}</td>
+          <td>${done}/${ch.reqs.length}</td>
+          <td><strong style="color:${csc.pct===null?'#858A91':csc.pct>=80?'#16A34A':csc.pct>=60?'#D97706':'#DC2626'}">${csc.pct!==null?csc.pct+'%':'—'}</strong></td>
+          <td>${csc.C}</td><td>${csc.NCm}</td>
+          <td style="color:${csc.NCM?'#DC2626':'inherit'}">${csc.NCM}</td>
+          <td>${csc.OBS}</td>
+        </tr>`;
+      }).join('')}</tbody>
+    </table>
+
+    ${ncs.length ? `
+    <div class="rpt-sec-title">3. Non-Conformités & Observations (${ncs.length})</div>
+    <table class="rpt-tbl">
+      <thead><tr><th>Réf.</th><th>Sévérité</th><th>Chapitre</th><th>Exigence</th><th>Constats</th></tr></thead>
+      <tbody>${ncs.map(nc => `<tr>
+        <td style="font-family:var(--mono);font-size:.72rem;white-space:nowrap">${esc(nc.ref)}</td>
+        <td><strong style="color:${nc.score==='NCM'?'#DC2626':nc.score==='NCm'?'#D97706':'#7C3AED'}">${nc.score}</strong></td>
+        <td style="font-size:.75rem;color:#858A91">${esc(nc.chapter)}</td>
+        <td style="font-size:.8rem">${esc(nc.text)}</td>
+        <td style="font-size:.78rem">${nc.notes ? esc(nc.notes) : '—'}</td>
+      </tr>`).join('')}</tbody>
+    </table>` : `<div class="rpt-sec-title">3. Non-Conformités & Observations</div>
+    <p style="color:#16A34A;padding:16px 0">🎉 Aucune non-conformité détectée sur les exigences évaluées.</p>`}
+
+    <div class="rpt-sec-title">4. Conclusion & Recommandations</div>
+    <p style="font-size:.88rem;color:var(--ink2);line-height:1.7;margin-bottom:12px">
+      ${sc.pct !== null && sc.pct >= 80 && sc.NCM === 0
+        ? `Le système de management de ${esc(m.company||'l\'entreprise')} présente un niveau de maturité satisfaisant. Les exigences du référentiel ${std.short} sont globalement respectées. Il est recommandé de maintenir la dynamique d'amélioration continue et de planifier les audits internes à venir.`
+        : `Des actions correctives sont nécessaires avant de soumettre le système à une certification tierce partie. Les ${sc.NCM} non-conformités majeures identifiées doivent faire l'objet d'un Plan d'Actions Correctives (PAC) documenté avec des délais de mise en œuvre définis et validés par la direction.`}
+    </p>
+    ${sc.pct !== null && sc.NCM > 0 ? `
+    <p style="font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:8px">Priorités d'action (NCM) :</p>
+    <ul style="font-size:.82rem;color:var(--ink2);padding-left:20px;line-height:1.8">
+      ${ncs.filter(n=>n.score==='NCM').map(n => `<li><strong>${esc(n.ref)}</strong> — ${esc(n.text.slice(0,80))}${n.text.length>80?'…':''}</li>`).join('')}
+    </ul>` : ''}
+
+    <div class="rpt-footer">
+      Rapport généré le ${new Date().toLocaleDateString('fr-FR',{day:'2-digit',month:'long',year:'numeric'})} —
+      7AS Consulting &amp; Audit · Outil d'Audit QHSE<br>
+      ${esc(m.auditor||'')} ${m.auditor&&m.team?'·':''} ${esc(m.team||'')}
+    </div>
+  `;
+}
+
+// ============================================================
+// IMPORT / EXPORT
+// ============================================================
+function exportJSON() {
+  if (!state.current) return;
+  const data = JSON.stringify(state.current, null, 2);
+  const blob = new Blob([data], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `audit-${state.current.meta.company || 'export'}-${state.current.meta.date || 'sans-date'}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+function showImport() {
+  const m = document.getElementById('importModal');
+  if (m) { m.style.display = 'flex'; }
+}
+function closeImport() {
+  const m = document.getElementById('importModal');
+  if (m) { m.style.display = 'none'; }
+}
+function doImport() {
+  const file = document.getElementById('importFile').files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const audit = JSON.parse(e.target.result);
+      if (!audit.id || !audit.standard || !STANDARDS[audit.standard]) throw new Error('Format invalide');
+      audit.id = Date.now().toString(36); // new ID to avoid conflicts
+      state.audits.unshift(audit);
+      saveAudits();
+      closeImport();
+      renderDashboard();
+      alert('Audit importé avec succès !');
+    } catch(err) {
+      alert('Erreur : fichier JSON invalide ou format non reconnu.\n' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function esc(str) {
+  if (!str) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', () => {
+  loadAudits();
+  renderDashboard();
+  renderSetup();
+  // Keyboard shortcuts in conduct view
+  document.addEventListener('keydown', e => {
+    if (state.view !== 'conduct' || !state.current) return;
+    if (e.target.tagName === 'TEXTAREA' || e.target.tagName === 'INPUT') return;
+    if (e.key === 'ArrowRight' || e.key === 'PageDown') nextChapter();
+    if (e.key === 'ArrowLeft' || e.key === 'PageUp') prevChapter();
+  });
+  // Auto-save every 60s
+  setInterval(() => { if (state.current && state.view === 'conduct') doSave(); }, 60000);
+});
+</script>
+</body>
+</html>
